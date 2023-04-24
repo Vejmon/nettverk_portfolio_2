@@ -48,8 +48,18 @@ class A_Con:
     # now let's create a packet with sequence number 1
 
 
-class StartStop(A_Con):
+class StopGo(A_Con):
     def __init__(self, laddr, lport, raddr, rport):
         super().__init__(laddr, lport, raddr, rport)
         self.window = 1
 
+class GoBackN(A_Con):
+    def __init__(self, laddr, lport, raddr, rport):
+        super().__init__(laddr, lport, raddr, rport)
+        self.window = 5
+
+
+class SelectiveRepeat(A_Con):
+    def __init__(self, laddr, lport, raddr, rport):
+        super().__init__(laddr, lport, raddr, rport)
+        self.window = 5

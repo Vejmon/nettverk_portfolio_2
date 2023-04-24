@@ -86,12 +86,24 @@ def valid_file(name):
     return fil
 
 
+# checks input for a valid type of !JOBBHER!
+def valid_method(inn):
+    if inn == 'gbn':
+        return DRTP.GoBackN
+    if inn == 'sr':
+        return DRTP.SelectiveRepeat
+    else:
+        print(f"-r, --reli flag used incorectly, {inn} is not a method for reliable transfer")
+        print("method defaults to StopGo")
+        return DRTP.StopGo
+
+
 # parse arguments the user may input when running the skript, some are required in a sense, others are optional
 def get_args():
     # start the argument parser
-    parse = argparse.ArgumentParser(prog="Simpleperf",
-                                    description="opens a tcp connection between a host and a server, "
-                                                "then stress that connection, written in python",
+    parse = argparse.ArgumentParser(prog="FileTransfer",
+                                    description="transfer a chosen file between two hosts, uses UDP and "
+                                                "a custom protocol DRTP for reliable transfer.",
                                     epilog='simpleperf --help')
 
     # optional arguments, with long and short name, default values when needed, info for the help page
@@ -111,7 +123,7 @@ def get_args():
                        help="ipv4 address to connect with, default connects with node h1")
     parse.add_argument('-f', '--file', type=valid_file, default=default_file,
                        help="specify a file in the img folder to transfer defaults to supplied kameleon.jpg")
-    parse.add_argument('-r', '--reli', choices=['sg', 'gbn', 'sr'], default='sg',
+    parse.add_argument('-r', '--reli', type=valid_method, default=DRTP.StartStop,
                        help='choose which method used for reliable transfer, sg is stop_go, gbn is go back n,'
                             'sr is selective repeat.')
 
@@ -129,8 +141,9 @@ if not (args.server ^ args.client):
 
 def client():
 
-    # open a socket using ipv4 address(AF_INET), and a TCP connection (SOCK_STREAM)
-    # and loop until we have created enough clients and connections.
+    # create connection type based upon the arguments.
+    # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
+    DRTP.A_Con
     while not connected_list.all_connected():
         client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
