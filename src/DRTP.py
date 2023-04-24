@@ -1,27 +1,32 @@
 from struct import *
 
+header_format = '!IIHH'
+
 
 class A_Con:
-    def __init__(self, laddr, lport, raddr, rport):
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls)
+
+    def __init__(self, laddr, raddr, port):
         self.laddr = laddr
-        self.lport = lport
         self.raddr = raddr
-        self.rport = rport
-        self.type = type
+        self.port = port
         self.seq = 0
         self.ack = 0
         self.syn = 0
-        self.form = '!IIHH'
 
+    def set_connection(self, laddr, raddr, port):
+        self.laddr = laddr
+        self.raddr = raddr
+        self.port = port
 
+# creates a packet with header information and application data
+# the input arguments are sequence number, acknowledgment number
+# flags (we only use 4 bits),  receiver window and application data
+# struct.pack returns a bytes object containing the header values
+# packed according to the header_format !IIHH
     def create_packet(self, flags, data):
-        # creates a packet with header information and application data
-        # the input arguments are sequence number, acknowledgment number
-        # flags (we only use 4 bits),  receiver window and application data
-        # struct.pack returns a bytes object containing the header values
-        # packed according to the header_format !IIHH
         header = pack(self.form, self.seq, self.ack, flags, data)
-
 
         # once we create a header, we add the application data to create a packet
         # of 1472 bytes
@@ -49,17 +54,18 @@ class A_Con:
 
 
 class StopGo(A_Con):
-    def __init__(self, laddr, lport, raddr, rport):
-        super().__init__(laddr, lport, raddr, rport)
+    def __init__(self, laddr, raddr, port):
+        super().__init__(laddr, raddr, port)
         self.window = 1
 
+
 class GoBackN(A_Con):
-    def __init__(self, laddr, lport, raddr, rport):
-        super().__init__(laddr, lport, raddr, rport)
+    def __init__(self, laddr, raddr, port):
+        super().__init__(laddr, raddr, port)
         self.window = 5
 
 
 class SelectiveRepeat(A_Con):
-    def __init__(self, laddr, lport, raddr, rport):
-        super().__init__(laddr, lport, raddr, rport)
+    def __init__(self, laddr, raddr, port):
+        super().__init__(laddr, raddr, port)
         self.window = 5
