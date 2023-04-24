@@ -12,8 +12,11 @@ class A_Con:
         self.raddr = raddr
         self.port = port
         self.seq = 0
-        self.ack = 0
+        self.acked = 0
         self.syn = 0
+        self.ack = 0
+        self.fin = 0
+        self.win = 0
 
     def set_connection(self, laddr, raddr, port):
         self.laddr = laddr
@@ -42,6 +45,11 @@ class A_Con:
         # parse_flags(flags)
         return header_from_msg
 
+    def insert_flags(self):
+        flags = str(self.syn) + str(self.ack) + str(self.fin) + "0"
+        return int(flags)
+
+
     def parse_flags(flags):
         # we only parse the first 3 fields because we're not
         # using rst in our implementation
@@ -50,7 +58,13 @@ class A_Con:
         fin = flags & (1 << 1)
         return syn, ack, fin
 
-    # now let's create a packet with sequence number 1
+    def send_hello(self, con):
+        self.syn = 1
+        header = pack(header_format, self.seq, self.ack, self.insert_flags(), self.win)
+        con.sendto(header, (self.raddr, self.port))
+        self.syn = 0
+
+# now let's create a packet with sequence number 1
 
 
 class StopGo(A_Con):

@@ -3,13 +3,14 @@ import subprocess
 import sys
 import argparse
 import socket
+import funcy
+import os
 import threading as th
 import ipaddress
 import time
 import json
 import math
 import DRTP
-
 
 # a function to run ifconfig on a node and grab the first ipv4 address we find.
 # which makes sense to set as default address when running in server mode.
@@ -65,28 +66,15 @@ def valid_port(inn):
         raise argparse.ArgumentTypeError(f'port number: ({inn}) must be within range [1024 - 65535]')
     return ut
 
-
-# if the client doesn't specify a file, we use the default file.
-def default_file():
-    try:
-        fil = open('../img/kameleon.jpg', 'r')
-    except FileNotFoundError:
-        print('Fatal error, could not find default file')
-        print('please make sure kameleon.jpg is present in the img folder')
-        sys.exit(1)
-    return fil
-
-
 # attempts to grab a specified file.
 def valid_file(name):
-    try:
-        fil = open(f"../img/{name}", 'r')
-    except FileNotFoundError:
-        print('Fatal error, could not find requested file')
-        print(f"please make sure {name} is present in the img folder")
+    abs = (os.path.dirname(__file__))
+    path = abs + f"/../img/{name}"
+    if os.path.isfile(path):
+        return path
+    else:
+        print(f"couldn't find requested file, please make sure {name} is present in the img folder")
         sys.exit(1)
-    return fil
-
 
 # method for checking the --rel flag if argument given by user is not valid, default to StopGo.
 # returns uninitiated instances of DRTP methods.
@@ -128,8 +116,8 @@ def get_args():
     # client arguments ignored if running a client
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
                        help="ipv4 address to connect with, default connects with node h1")
-    parse.add_argument('-f', '--file', type=valid_file, default=default_file,
-                       help="specify a file in the img folder to transfer defaults to supplied kameleon.jpg")
+    parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",
+                       help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
     parse.add_argument('-r', '--reli', type=valid_method,
                        help='choose which method used for reliable transfer, sg is stop_go, gbn is go back n,'
                             'sr is selective repeat.')
@@ -147,17 +135,31 @@ if not (args.server ^ args.client):
 def client():
     # create connection type based upon the arguments.
     # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
-    args.reli.set_connection(args.bind, args.raddr, args.port)
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cli_sock:
+        a_con = DRTP.A_Con(args.bind, args.serverip, args.port)
+
+        a_con.send_hello(cli_sock)
+
+        #with open(args.file, 'rb', 1460) as fil:
+        #    cli_sock.sendto(fil.read(), (args.serverip, args.port))
+
 
 
 def server():
+
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as serv_sock:
-        data, addr = serv_sock.recv(1500)
-
-
-
-    print("serv'O clock")
-
+        serv_sock.bind((args.bind, args.port))
+        print(f"server at {args.bind}:{args.port} is ready to receive")
+        while True:
+            # recieve first syn from client
+            try:
+                data, addr = serv_sock.recvfrom(12)
+            except KeyboardInterrupt:
+                print("Keyboard interrupt recieved, exiting server")
+                sys.exit(1)
+            print(addr)
+            new_con = DRTP.A_Con(args.bind, addr[0], addr[1])
+            print(data)
 
 if args.server:
     server()
