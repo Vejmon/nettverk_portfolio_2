@@ -69,7 +69,7 @@ def valid_port(inn):
 
 # attempts to grab a specified file.
 def valid_file(name):
-    abs = (os.path.dirname(__file__))
+    abs = os.path.dirname(__file__)
     path = abs + f"/../img/{name}"
     if os.path.isfile(path):
         return path
@@ -151,7 +151,6 @@ def server():
 
             header = data[:12]
             body = data[12:]
-            print(len(header))
             en_client = json.loads(body.decode())
 
             # creates a "creates" a clone of the client attempting to connect.
@@ -168,12 +167,13 @@ def server():
             # hands the socket over,
             remote_client.set_con(serv_sock)
             # responds to the client, and let them know we are ready to recieve
+            time.sleep(1)
             remote_client.answer_hello(header)
 
             chunks = []
 
-            """while remote_client.fin == 0:
-                chunks.append(remote_client.recv(1500))"""
+            while remote_client.local_header.get_fin == 0:
+                chunks.append(remote_client.recv(1500))
 
 
 if args.server:
