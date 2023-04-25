@@ -122,7 +122,7 @@ def get_args():
                        help="ipv4 address to connect with, default connects with node h1")
     parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",
                        help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
-    parse.add_argument('-r', '--reli', type=valid_method, default="sg",
+    parse.add_argument('-r', '--reli', choices=['sg','sr','gbn'], default="sg",
                        help='choose which method used for reliable transfer, sg is stop_go, gbn is go back n,'
                             'sr is selective repeat.')
 
@@ -137,19 +137,21 @@ if not (args.server ^ args.client):
 
 
 def client():
-    new_method = args.reli.set_connection(args.bind, args.serverip, args.port)
-    print(new_method)
+    if args.reli == "gbn":
+        method = DRTP.GoBackN(args.bind, args.serverip, args.port)
+    elif args.reli == 'sr':
+        method = DRTP.SelectiveRepeat(args.bind, args.serverip, args.port)
+    else:
+        method = DRTP.StopGo(args.bind, args.serverip, args.port)
+
+    print(method)
     # client_method.set_connection(args.bind, args.serverip, args.port)
 
     # create connection type based upon the arguments.
     # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cli_sock:
-        a_con = DRTP.A_Con(args.bind, args.serverip, args.port)
 
-        a_con.send_hello(cli_sock)
-
-        #with open(args.file, 'rb', 1460) as fil:
-        #    cli_sock.sendto(fil.read(), (args.serverip, args.port))
+        method.send_hello(cli_sock)
 
 
 

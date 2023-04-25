@@ -1,5 +1,5 @@
 from struct import *
-
+import json
 header_format = '!IIHH'
 
 
@@ -8,7 +8,7 @@ class A_Con:
         return super().__new__(cls)
 
     def __str__(self):
-        return f"laddr: '{self.laddr}', raddr: '{self.raddr}, port: {self.port}, typ:'{self.__name__}'"
+        return f"laddr: '{self.laddr}', raddr: '{self.raddr}, port: {self.port}'"
 
     def __init__(self, laddr, raddr, port):
         self.laddr = laddr
@@ -65,6 +65,7 @@ class A_Con:
         self.syn = 1
         header = pack(header_format, self.seq, self.ack, self.insert_flags(), self.win)
         con.sendto(header, (self.raddr, self.port))
+
         self.syn = 0
 
 # now let's create a packet with sequence number 1
