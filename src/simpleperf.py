@@ -82,9 +82,9 @@ def valid_file(name):
 def get_args():
     # start the argument parser
     parse = argparse.ArgumentParser(prog="FileTransfer",
-                                    description="transfer a chosen file between two hosts, uses UDP and "
-                                                "a custom protocol DRTP for reliable transfer.",
-                                    epilog='simpleperf --help')
+        description="transfer a chosen file between two hosts, uses UDP and "
+                    "a custom protocol DRTP for reliable transfer.",
+        epilog='simpleperf --help')
 
     # optional arguments, with long and short name, default values when needed, info for the help page
     parse.add_argument('-s', '--server', action='store_true', help='enables server mode')
@@ -102,8 +102,8 @@ def get_args():
     parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",
                        help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
     parse.add_argument('-r', '--reli', choices=['sw', 'sr', 'gbn'], default="sw",
-                       help='choose which method used for reliable transfer, sw is stop wait, gbn is go back n,'
-                            'sr is selective repeat.')
+                       help='choose which method used for reliable transfer, '
+                            'sw is stop wait, gbn is go back n, sr is selective repeat.')
 
     # parse the arguments
     return parse.parse_args()
@@ -124,7 +124,6 @@ def client():
     else:
         method = DRTP.StopWait(args.bind, args.serverip, args.port)
 
-    # client_method.set_connection(args.bind, args.serverip, args.port)
 
     # create connection type based upon the arguments.
     # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
@@ -136,7 +135,6 @@ def client():
             while chunk:
                 method.send(chunk)
                 chunk = fil.read(1460)
-
 
 
 def server():
@@ -176,7 +174,6 @@ def server():
 
             """while remote_client.fin == 0:
                 chunks.append(remote_client.recv(1500))"""
-
 
 
 if args.server:

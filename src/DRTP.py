@@ -16,6 +16,8 @@ class A_Con:
         self.laddr = laddr
         self.raddr = raddr
         self.port = port
+        self.local_header = Header
+        self.remote_header = Header
         self.seqed = 0
         self.acked = 0
         self.syn = 0
@@ -23,12 +25,6 @@ class A_Con:
         self.fin = 0
         self.win = 0
         self.con = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    #
-    def set_connection(self, laddr, raddr, port):
-        self.laddr = laddr
-        self.raddr = raddr
-        self.port = port
 
     def set_con(self, con):
         self.con = con
@@ -76,12 +72,12 @@ class A_Con:
         # the returned tuple is in this format
         # seq, ack, flags(syn,ack,fin,rst), win
 
-    # fra safiqul
+    # insert flags into an integer
     def insert_flags(self):
         flags = str(self.syn) + str(self.ack) + str(self.fin) + "0"
         return int(flags)
 
-    # fra safiqul
+    # grab the individual flags from an integer
     def parse_flags(self, flags):
         # we only parse the first 3 fields because we're not
         # using rst in our implementation
@@ -91,7 +87,7 @@ class A_Con:
         return syn, ack, fin
 
 
-    # a function used to send a syn message to a server from a client.
+    # a function used to send a establish a connection, from a client to a server.
     def send_hello(self):
         # set syn flag to 1
         self.syn = 1
@@ -112,10 +108,12 @@ class A_Con:
         seqed, acked, flags, win = self.parse_header(header)
         syn, ack, fin = self.parse_flags(flags)
 
-
+    # a function to respond to the first connection from a client.
     def answer_hello(self, syn_header):
         seqed, acked, flags, win = self.parse_header(syn_header)
         syn, ack, fin = self.parse_flags(flags)
+
+
 
 
 
@@ -164,3 +162,27 @@ class SelectiveRepeat(A_Con):
     def send(self, data):
         if self.seqed == 0:
             self.send_hello()
+
+class Header:
+
+    def __init__(self, header):
+        self.seqed, self.acked, self.flags, self.win = self.parse_header(header)
+
+        self.syn, self.ack, self.fin = self.parse_flags(self.flags)
+    def parse_flags(self, flags):
+        # we only parse the first 3 fields because we're not
+        # using rst in our implementation
+        syn = flags & (1 << 3)
+        ack = flags & (1 << 2)
+        fin = flags & (1 << 1)
+        return syn, ack, fin
+    def parse_header(self, header):
+        # takes a header of 12 bytes as an argument,
+        # unpacks the value based on the specified header_format
+        # and return a tuple with the values
+        header_from_msg = unpack(header_format, header)
+        seqed = header_from_msg[0]
+        acked = header_from_msg[1]
+        flags = header_from_msg[2]
+        win = header_from_msg[3]
+        return seqed, acked, flags, win
