@@ -11,6 +11,7 @@ import json
 import math
 import DRTP
 
+
 # a function to run ifconfig on a node and grab the first ipv4 address we find.
 # which makes sense to set as default address when running in server mode.
 def get_ip():
@@ -65,6 +66,7 @@ def valid_port(inn):
         raise argparse.ArgumentTypeError(f'port number: ({inn}) must be within range [1024 - 65535]')
     return ut
 
+
 # attempts to grab a specified file.
 def valid_file(name):
     abs = (os.path.dirname(__file__))
@@ -74,27 +76,6 @@ def valid_file(name):
     else:
         print(f"couldn't find requested file, please make sure {name} is present in the img folder")
         sys.exit(1)
-
-# method for checking the --rel flag if argument given by user is not valid, default to StopGo.
-# returns uninitiated instances of DRTP methods.
-def valid_method(inn):
-    print("kjører")
-    types = ['gbn', 'sr', 'sg']
-    if inn not in types:
-        print("valgt stopgo")
-        print(f"-r, --reli flag used incorectly, {inn} is not a method for reliable transfer")
-        print("defaults to StopGo")
-        return DRTP.StopGo.__new__(DRTP.StopGo)
-
-    if inn == 'gbn':
-        print("valgt gbn")
-        return DRTP.GoBackN.__new__(DRTP.GoBackN)
-    if inn == 'sr':
-        print("valgt sr")
-        return DRTP.SelectiveRepeat.__new__(DRTP.SelectiveRepeat)
-    else:
-        print("valgt stopgo")
-        return DRTP.StopGo.__new__(DRTP.StopGo)
 
 
 # parse arguments the user may input when running the skript, some are required in a sense, others are optional
@@ -109,25 +90,24 @@ def get_args():
     parse.add_argument('-s', '--server', action='store_true', help='enables server mode')
     parse.add_argument('-c', '--client', action='store_true', help='enables client mode')
     parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open")
-
-    # server arguments ignored if running a server
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
                        help="ipv4 adress to bind server to, default binds to local address")
-    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'neteem'], default="norm",
+    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'neteem', 'skipseq'], default="norm",
                        help="run tests on a server, loss drops some packets, skipack skips acking some packets,"
                             "neteem implements tc-netem")
 
-    # client arguments ignored if running a client
+    # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
                        help="ipv4 address to connect with, default connects with node h1")
     parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",
                        help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
-    parse.add_argument('-r', '--reli', choices=['sg','sr','gbn'], default="sg",
-                       help='choose which method used for reliable transfer, sg is stop_go, gbn is go back n,'
+    parse.add_argument('-r', '--reli', choices=['sw', 'sr', 'gbn'], default="sw",
+                       help='choose which method used for reliable transfer, sw is stop wait, gbn is go back n,'
                             'sr is selective repeat.')
 
     # parse the arguments
     return parse.parse_args()
+
 
 args = get_args()
 
@@ -142,9 +122,8 @@ def client():
     elif args.reli == 'sr':
         method = DRTP.SelectiveRepeat(args.bind, args.serverip, args.port)
     else:
-        method = DRTP.StopGo(args.bind, args.serverip, args.port)
+        method = DRTP.StopWait(args.bind, args.serverip, args.port)
 
-    print(method)
     # client_method.set_connection(args.bind, args.serverip, args.port)
 
     # create connection type based upon the arguments.
@@ -154,22 +133,33 @@ def client():
         method.send_hello(cli_sock)
 
 
-
 def server():
-
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as serv_sock:
         serv_sock.bind((args.bind, args.port))
         print(f"server at {args.bind}:{args.port} is ready to receive")
         while True:
             # recieve first syn from client
             try:
-                data, addr = serv_sock.recvfrom(12)
+                data, addr = serv_sock.recvfrom(500)
             except KeyboardInterrupt:
                 print("Keyboard interrupt recieved, exiting server")
                 sys.exit(1)
-            print(addr)
-            new_con = DRTP.A_Con(args.bind, addr[0], addr[1])
-            print(data)
+
+            header = data[:13]
+            body = data[12:]
+            en_client = json.loads(body.decode())
+            if en_client['typ'] == 'GoBackN':
+                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port)
+            elif en_client['typ'] == 'StopWait':
+                remote_client = DRTP.StopWait(args.bind, en_client['laddr'], args.port)
+            elif en_client['typ'] == 'SelectiveRepeat':
+                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'], args.port)
+            else:
+                print("client information insuficient, exiting")
+                sys.exit()
+
+            remote_client.answer_hello(header)
+
 
 if args.server:
     server()
