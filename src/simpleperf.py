@@ -130,7 +130,13 @@ def client():
     # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cli_sock:
 
-        method.send_hello(cli_sock)
+        method.set_con(cli_sock)
+        with open(args.file, 'rb') as fil:
+            chunk = fil.read(1460)
+            while chunk:
+                method.send(chunk)
+                chunk = fil.read(1460)
+
 
 
 def server():
@@ -145,9 +151,12 @@ def server():
                 print("Keyboard interrupt recieved, exiting server")
                 sys.exit(1)
 
-            header = data[:13]
+            header = data[:12]
             body = data[12:]
+            print(len(header))
             en_client = json.loads(body.decode())
+
+            # creates a "creates" a clone of the client attempting to connect.
             if en_client['typ'] == 'GoBackN':
                 remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port)
             elif en_client['typ'] == 'StopWait':
@@ -158,7 +167,16 @@ def server():
                 print("client information insuficient, exiting")
                 sys.exit()
 
+            # hands the socket over,
+            remote_client.set_con(serv_sock)
+            # responds to the client, and let them know we are ready to recieve
             remote_client.answer_hello(header)
+
+            chunks = []
+
+            """while remote_client.fin == 0:
+                chunks.append(remote_client.recv(1500))"""
+
 
 
 if args.server:
