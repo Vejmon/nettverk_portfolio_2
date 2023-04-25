@@ -3,7 +3,6 @@ import subprocess
 import sys
 import argparse
 import socket
-import funcy
 import os
 import threading as th
 import ipaddress
@@ -79,17 +78,22 @@ def valid_file(name):
 # method for checking the --rel flag if argument given by user is not valid, default to StopGo.
 # returns uninitiated instances of DRTP methods.
 def valid_method(inn):
+    print("kjører")
     types = ['gbn', 'sr', 'sg']
     if inn not in types:
+        print("valgt stopgo")
         print(f"-r, --reli flag used incorectly, {inn} is not a method for reliable transfer")
         print("defaults to StopGo")
         return DRTP.StopGo.__new__(DRTP.StopGo)
 
     if inn == 'gbn':
+        print("valgt gbn")
         return DRTP.GoBackN.__new__(DRTP.GoBackN)
     if inn == 'sr':
+        print("valgt sr")
         return DRTP.SelectiveRepeat.__new__(DRTP.SelectiveRepeat)
     else:
+        print("valgt stopgo")
         return DRTP.StopGo.__new__(DRTP.StopGo)
 
 
@@ -118,7 +122,7 @@ def get_args():
                        help="ipv4 address to connect with, default connects with node h1")
     parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",
                        help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
-    parse.add_argument('-r', '--reli', type=valid_method,
+    parse.add_argument('-r', '--reli', type=valid_method, default="sg",
                        help='choose which method used for reliable transfer, sg is stop_go, gbn is go back n,'
                             'sr is selective repeat.')
 
@@ -133,6 +137,10 @@ if not (args.server ^ args.client):
 
 
 def client():
+    new_method = args.reli.set_connection(args.bind, args.serverip, args.port)
+    print(new_method)
+    # client_method.set_connection(args.bind, args.serverip, args.port)
+
     # create connection type based upon the arguments.
     # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cli_sock:

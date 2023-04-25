@@ -7,6 +7,9 @@ class A_Con:
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
 
+    def __str__(self):
+        return f"laddr: '{self.laddr}', raddr: '{self.raddr}, port: {self.port}, typ:'{self.__name__}'"
+
     def __init__(self, laddr, raddr, port):
         self.laddr = laddr
         self.raddr = raddr
