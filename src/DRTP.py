@@ -1,7 +1,7 @@
 from struct import *
 header_format = '!IIHH'
 
-
+#A_con Grunnklassen som har alt som er felles for de tre klassene
 class A_Con:
 
     def __str__(self):
@@ -86,14 +86,19 @@ class StopWait(A_Con):
         super().__init__(laddr, raddr, port)
         self.window = 1
 
+#Må hente header fra a_con
+#vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
 class GoBackN(A_Con):
     def __init__(self, laddr, raddr, port):
         super().__init__(laddr, raddr, port)
         self.window = 5
-
+#Må hente header fra a_con
+#vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
 class SelectiveRepeat(A_Con):
     def __init__(self, laddr, raddr, port):
         super().__init__(laddr, raddr, port)
         self.window = 5
+#Må hente header fra a_con
+#vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
