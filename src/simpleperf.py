@@ -190,16 +190,16 @@ def server():
             print("mottat header")
             print(remote_client.remote_header)
 
-            # lager en random fil i ut mappen
+            # lager en fil fil i ut mappen
+            # hvis filen fins, inkrementerer med 1
             filnavn = en_client['fil']
-            print(f"\n\n\n{filnavn}\n\n\n")
             abs = os.path.dirname(__file__)
+            # hopper ut av src mappen
             abs = abs[:-4]
-
             path = abs + f"/ut/{filnavn}"
             unik_fil = get_save_file(path)
+
             open(unik_fil, "xb")
-            print(f"\n\n{unik_fil}\n\n")
 
             # write to file as long as transmission isn't done.
             while not remote_client.local_header.get_fin():

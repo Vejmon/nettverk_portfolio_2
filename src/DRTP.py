@@ -136,6 +136,7 @@ class StopWait(A_Con):
         self.remote_header, body = split_packet(data)
         print("mottat header")
         print(self.remote_header)
+        return body
 
 
 # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
