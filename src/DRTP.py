@@ -1,11 +1,24 @@
-import os.path
 import socket
 import sys
 from struct import *
-import random
 
 # header format is always the same, so a variable is here for convenience
 header_format = '!IIHH'
+
+
+def split_packet(data):
+    header_data = data[:12]
+    body = False
+    try:
+        body = data[12:]
+    except IndexError:
+        print("ingen body")
+    remote_header = Header(header_data)
+
+    if body:
+        return remote_header, body
+    else:
+        return remote_header, False
 
 
 # A_con Grunnklassen som har alt som er felles for de tre klassene
@@ -25,21 +38,6 @@ class A_Con:
     def set_con(self, con):
         self.con = con
 
-    def split_packet(self, data):
-        header_data = data[:12]
-        body = False
-        try:
-            body = data[12:]
-        except IndexError:
-            print("ingen body")
-        remote_header = Header(header_data)
-
-        if body:
-            return remote_header, body
-        else:
-            return remote_header, False
-
-
     def create_packet(self, data):
         header = self.local_header.build_header()
         packet = header + data
@@ -48,14 +46,16 @@ class A_Con:
 
     # a function used to send a establish a connection, from a client to a server.
     def send_hello(self):
-        self.local_header.syn = 1
+        self.local_header.set_syn(True)
         # set syn flag to 1
         # body is a json object, carrying information about the client.
         body = self.__str__().encode()
-
         packet = self.create_packet(body)
+
+        print(self.local_header)
         self.con.sendto(packet, (self.raddr, self.port))
-        self.con.settimeout(2.5)
+
+        self.con.settimeout(5)
         # receive an ack from the server
         try:
             data, addr = self.con.recvfrom(500)
@@ -64,20 +64,30 @@ class A_Con:
             sys.exit(1)
 
         # check the ack from the server
-        header_data , body = self.split_packet(data)
+        header_data, body = split_packet(data)
         self.remote_header = Header(header_data)
         if self.remote_header.get_ack() and self.remote_header.get_syn:
-
             self.local_header.increment_seq()
             self.local_header.set_flags("0100")
 
             self.con.sendto(self.create_packet(b'0'), (self.raddr, self.port))
 
     # a function to respond to the first connection from a client.
-    def answer_hello(self, syn_header):
-        header = Header(syn_header)
+    def answer_hello(self):
+        # check that we have received the first header in the sequence, the ack flag and syn flag.
+        if self.remote_header.get_syn() and self.remote_header.get_ack() and not self.remote_header.get_seqed():
+            # setter flag i egen header.
+            self.local_header.set_syn(1)
+            self.local_header.set_ack(1)
+            # lager en tom pakke
+            packet = self.create_packet(b'0')
+            # answer the hello.
+            self.con.sendto(packet, (self.raddr, self.port))
 
-
+        data = self.con.recvfrom(500)
+        header, body = split_packet(data)
+        self.remote_header = Header(header)
+        # if self.remote_header.get_ack() and self.remote_header.get_seqed() == self.local_header.get_seqed():
 
 
 # Det som mangler i A_con: Sende FIN header (si ha det)
@@ -91,27 +101,23 @@ class StopWait(A_Con):
         self.window = 1
 
     def send(self, data):
+
         # if we are sending the first packet, we are establishing a connection first.
         if not self.local_header.get_seqed():
             self.send_hello()
 
         print(data)
 
-    def recv(self, chunks):
+    def recv(self, chunk_size):
+        if not self.local_header.get_seqed():
+            self.answer_hello()
 
-        # lager en random random fil i ut mappen
-        abs = os.path.dirname(__file__)
-        hash = random.getrandbits(128)
-        path = abs + f"/../ut/{hash}"
-
-        # skriv til filen så lenge fin flagget ikke er satt
-        while not self.local_header.get_fin():
-            data, addr = self.con.recvfrom(chunks)
-            with open(path, "w") as skriv:
-                skriv.write(chunks)
+        data, addr = self.con.recvfrom(chunk_size)
+        header, body = split_packet(data)
+        self.remote_header = Header(header)
 
 
-# Må hente header fra a_con
+# Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
 # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
 class GoBackN(A_Con):
@@ -119,7 +125,7 @@ class GoBackN(A_Con):
         super().__init__(laddr, raddr, port)
         self.window = 5
 
-    # Må hente header fra a_con
+    # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
     def send(self, data):
@@ -132,26 +138,33 @@ class SelectiveRepeat(A_Con):
         super().__init__(laddr, raddr, port)
         self.window = 5
 
-    # Må hente header fra a_con
+    # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
     def send(self, data):
         if self.local_header.get_seqed() == 0:
             self.send_hello()
 
+
 class Header:
+    def __str__(self):
+        return '{"seqed": %s, "acked": %s, "syn": %s, "ack": %s, "fin": %s, "win": %s}' % \
+            (self.seqed, self.acked, self.syn, self.ack, self.fin, self.win)
+
     def __init__(self, header):
         self.seqed, self.acked, self.flags, self.win = self.parse_header(header)
         self.syn, self.ack, self.fin = self.parse_flags(self.flags)
 
-    def increment_seq(self):
-        self.seqed += 1
-
+    # hacky løsning, liker ikke dette, fix fix
     def parse_flags(self, integer_4bit):
-        integer = int(integer_4bit)
-        syn = integer & (1 << 3)
-        ack = integer & (1 << 2)
-        fin = integer & (1 << 1)
+        integer_4bit = str(integer_4bit)
+        if len(integer_4bit) < 4:
+            integer_4bit = "000" + integer_4bit
+        # print("inn: " + str(integer_4bit))
+        syn = integer_4bit[-4]
+        ack = integer_4bit[-3]
+        fin = integer_4bit[-2]
+        # print(f"ut: {syn}{ack}{fin}0")
         return syn, ack, fin
 
     def parse_header(self, header):
@@ -167,6 +180,9 @@ class Header:
 
     def build_header(self):
         return pack(header_format, self.seqed, self.acked, self.get_flags(), self.win)
+
+    def increment_seq(self):
+        self.seqed += 1
 
     def get_seqed(self):
         return self.seqed
@@ -185,7 +201,10 @@ class Header:
         return int(flags)
 
     def set_ack(self, one_or_zero):
-        self.ack = one_or_zero
+        if one_or_zero:
+            self.ack = 1
+        else:
+            self.ack = 0
 
     def get_ack(self):
         return self.ack
@@ -197,7 +216,10 @@ class Header:
         return self.win
 
     def set_fin(self, one_or_zero):
-        self.fin = one_or_zero
+        if one_or_zero:
+            self.ack = 1
+        else:
+            self.ack = 0
 
     def get_fin(self):
         return self.fin
@@ -206,4 +228,7 @@ class Header:
         return self.syn
 
     def set_syn(self, one_or_zero):
-        self.syn = one_or_zero
+        if one_or_zero:
+            self.ack = 1
+        else:
+            self.ack = 0

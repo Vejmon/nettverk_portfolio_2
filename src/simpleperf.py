@@ -4,6 +4,7 @@ import sys
 import argparse
 import socket
 import os
+import random
 import threading as th
 import ipaddress
 import time
@@ -82,9 +83,9 @@ def valid_file(name):
 def get_args():
     # start the argument parser
     parse = argparse.ArgumentParser(prog="FileTransfer",
-        description="transfer a chosen file between two hosts, uses UDP and "
-                    "a custom protocol DRTP for reliable transfer.",
-        epilog='simpleperf --help')
+                                    description="transfer a chosen file between two hosts, uses UDP and "
+                                                "a custom protocol DRTP for reliable transfer.",
+                                    epilog='simpleperf --help')
 
     # optional arguments, with long and short name, default values when needed, info for the help page
     parse.add_argument('-s', '--server', action='store_true', help='enables server mode')
@@ -124,12 +125,12 @@ def client():
     else:
         method = DRTP.StopWait(args.bind, args.serverip, args.port)
 
-
     # create connection type based upon the arguments.
     # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cli_sock:
 
         method.set_con(cli_sock)
+        # sender pakker så lenge det fins deler å lese
         with open(args.file, 'rb') as fil:
             chunk = fil.read(1460)
             while chunk:
@@ -149,8 +150,8 @@ def server():
                 print("Keyboard interrupt recieved, exiting server")
                 sys.exit(1)
 
-            header = data[:12]
-            body = data[12:]
+            header, body = DRTP.split_packet(data)
+
             en_client = json.loads(body.decode())
 
             # creates a "creates" a clone of the client attempting to connect.
@@ -164,16 +165,22 @@ def server():
                 print("client information insuficient, exiting")
                 sys.exit()
 
+            print(remote_client)
+            remote_client.remote_header = header
+
             # hands the socket over,
             remote_client.set_con(serv_sock)
-            # responds to the client, and let them know we are ready to recieve
-            time.sleep(1)
-            remote_client.answer_hello(header)
 
-            chunks = []
-
-            while remote_client.local_header.get_fin == 0:
-                chunks.append(remote_client.recv(1500))
+            # lager en random random fil i ut mappen
+            abs = os.path.dirname(__file__)
+            hash = random.getrandbits(128)
+            path = abs + f"/../ut/{hash}"
+            print(remote_client.remote_header)
+            # write to file as long as transmission isn't done.
+            while not remote_client.local_header.get_fin():
+                data = remote_client.recv(1500)
+                with open(path, "ab") as skriv:
+                    skriv.write(data)
 
 
 if args.server:
