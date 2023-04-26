@@ -51,7 +51,7 @@ class A_Con:
         # body is a json object, carrying information about the client.
         body = self.__str__().encode()
         packet = self.create_packet(body)
-
+        print("her")
         print(self.local_header)
         self.con.sendto(packet, (self.raddr, self.port))
 
@@ -106,7 +106,10 @@ class StopWait(A_Con):
         if not self.local_header.get_seqed():
             self.send_hello()
 
-        print(data)
+        # lager pakke og sender den.
+        pakke = self.create_packet(data)
+        self.con.sendto(pakke, (self.raddr, self.port))
+
 
     def recv(self, chunk_size):
         if not self.local_header.get_seqed():
@@ -114,6 +117,7 @@ class StopWait(A_Con):
 
         data, addr = self.con.recvfrom(chunk_size)
         header, body = split_packet(data)
+        print(header)
         self.remote_header = Header(header)
 
 
@@ -217,9 +221,9 @@ class Header:
 
     def set_fin(self, one_or_zero):
         if one_or_zero:
-            self.ack = 1
+            self.fin = 1
         else:
-            self.ack = 0
+            self.fin = 0
 
     def get_fin(self):
         return self.fin
@@ -229,6 +233,6 @@ class Header:
 
     def set_syn(self, one_or_zero):
         if one_or_zero:
-            self.ack = 1
+            self.syn = 1
         else:
-            self.ack = 0
+            self.syn = 0
