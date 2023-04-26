@@ -128,8 +128,11 @@ def client():
     # create connection type based upon the arguments.
     # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cli_sock:
-
+        cli_sock.bind((args.bind, args.port))
         method.set_con(cli_sock)
+
+        method.send_hello(args.file)
+
         # sender pakker så lenge det fins deler å lese
         with open(args.file, 'rb') as fil:
             chunk = fil.read(1460)
@@ -165,17 +168,21 @@ def server():
                 print("client information insuficient, exiting")
                 sys.exit()
 
-            print(remote_client)
+            # setter mottat header.
             remote_client.remote_header = header
 
             # hands the socket over,
             remote_client.set_con(serv_sock)
 
-            # lager en random random fil i ut mappen
+            print("mottat header")
+            print(remote_client.remote_header)
+
+            # lager en random fil i ut mappen
             abs = os.path.dirname(__file__)
             hash = random.getrandbits(128)
-            path = abs + f"/../ut/{hash}"
-            print(remote_client.remote_header)
+            path = abs + f"/../ut/{hash}.pic"
+            open(path, "x")
+
             # write to file as long as transmission isn't done.
             while not remote_client.local_header.get_fin():
                 data = remote_client.recv(1500)

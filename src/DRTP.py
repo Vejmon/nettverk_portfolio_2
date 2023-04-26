@@ -1,5 +1,6 @@
 import socket
 import sys
+import time
 from struct import *
 
 # header format is always the same, so a variable is here for convenience
@@ -23,6 +24,11 @@ def split_packet(data):
 
 # A_con Grunnklassen som har alt som er felles for de tre klassene
 class A_Con:
+
+    def grab_json(self, file_name):
+        return '{"laddr": "%s", "raddr": "%s", "port": %s, "typ": "%s", "fil", "%s"}' % \
+        (self.laddr, self.raddr, self.port, type(self).__name__, file_name)
+
     def __str__(self):
         return '{"laddr": "%s", "raddr": "%s", "port": %s, "typ": "%s"}' % \
             (self.laddr, self.raddr, self.port, type(self).__name__)
@@ -51,11 +57,12 @@ class A_Con:
         # body is a json object, carrying information about the client.
         body = self.__str__().encode()
         packet = self.create_packet(body)
-        print("her")
+        print("sendt header")
         print(self.local_header)
         self.con.sendto(packet, (self.raddr, self.port))
 
         self.con.settimeout(5)
+
         # receive an ack from the server
         try:
             data, addr = self.con.recvfrom(500)
@@ -64,29 +71,44 @@ class A_Con:
             sys.exit(1)
 
         # check the ack from the server
-        header_data, body = split_packet(data)
-        self.remote_header = Header(header_data)
-        if self.remote_header.get_ack() and self.remote_header.get_syn:
+        self.remote_header, body = split_packet(data)
+        print("mottat header")
+        print(self.remote_header)
+
+        if self.remote_header.get_ack() and self.remote_header.get_syn():
             self.local_header.increment_seqed()
             self.local_header.set_flags("0100")
 
-            self.con.sendto(self.create_packet(b'0'), (self.raddr, self.port))
+            # send empty packet with the correct flags
+            self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
 
     # a function to respond to the first connection from a client.
     def answer_hello(self):
-        # check that we have received the first header in the sequence, the ack flag and syn flag.
-        if self.remote_header.get_syn() and self.remote_header.get_ack() and not self.remote_header.get_seqed():
-            # setter flag i egen header.
-            self.local_header.set_syn(1)
-            self.local_header.set_ack(1)
-            # lager en tom pakke
-            packet = self.create_packet(b'0')
-            # answer the hello.
-            self.con.sendto(packet, (self.raddr, self.port))
+        self.con.settimeout(5)
+        # check that we have received the first header in the sequence and syn flag is set.
+        if self.remote_header.get_syn() and not self.remote_header.get_seqed():
+            # setter syn og ack flag i egen header.
+            self.local_header.set_flags("1100")
 
-        data = self.con.recvfrom(500)
-        header, body = split_packet(data)
-        self.remote_header = Header(header)
+            # lager en tom pakke
+            # time.sleep(1)
+            header = self.local_header.build_header()
+
+            # answer the hello.
+            print("sendt header")
+            print(self.local_header)
+            print(f"sender til {self.raddr, self.port}")
+            self.con.sendto(header, (self.raddr, self.port))
+
+        try:
+            data, addr = self.con.recvfrom(500)
+        except:
+            print(f"couldn't establish connection with {self.raddr}:{self.port}")
+            sys.exit(1)
+
+        self.remote_header, body = split_packet(data)
+
+        print(self.remote_header)
         # if self.remote_header.get_ack() and self.remote_header.get_seqed() == self.local_header.get_seqed():
 
 
@@ -110,15 +132,14 @@ class StopWait(A_Con):
         pakke = self.create_packet(data)
         self.con.sendto(pakke, (self.raddr, self.port))
 
-
     def recv(self, chunk_size):
         if not self.local_header.get_seqed():
             self.answer_hello()
 
         data, addr = self.con.recvfrom(chunk_size)
-        header, body = split_packet(data)
-        print(header)
-        self.remote_header = Header(header)
+        self.remote_header, body = split_packet(data)
+        print("mottat header")
+        print(self.remote_header)
 
 
 # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
@@ -165,9 +186,9 @@ class Header:
         if len(integer_4bit) < 4:
             integer_4bit = "000" + integer_4bit
         # print("inn: " + str(integer_4bit))
-        syn = integer_4bit[-4]
-        ack = integer_4bit[-3]
-        fin = integer_4bit[-2]
+        syn = int(integer_4bit[-4])
+        ack = int(integer_4bit[-3])
+        fin = int(integer_4bit[-2])
         # print(f"ut: {syn}{ack}{fin}0")
         return syn, ack, fin
 
@@ -186,10 +207,13 @@ class Header:
         return pack(header_format, self.seqed, self.acked, self.get_flags(), self.win)
 
     def set_flags(self, integer_4bit):
-        integer = int(integer_4bit)
-        self.syn = integer & (1 << 3)
-        self.ack = integer & (1 << 2)
-        self.fin = integer & (1 << 1)
+        integer_4bit = str(integer_4bit)
+        if len(integer_4bit) < 4:
+            integer_4bit = "000" + integer_4bit
+        # print("inn: " + str(integer_4bit))
+        self.syn = int(integer_4bit[-4])
+        self.ack = int(integer_4bit[-3])
+        self.fin = int(integer_4bit[-2])
 
     def get_flags(self):
         flags = str(self.syn) + str(self.ack) + str(self.fin) + "0"
