@@ -47,7 +47,7 @@ class A_Con:
     def create_packet(self, data):
         header = self.local_header.build_header()
         packet = header + data
-        print(f'packet containing header + data of size {len(packet)}')  # just to show the length of the packet
+        # print(f'packet containing header + data of size {len(packet)}')  # just to show the length of the packet
         return packet
 
     # a function used to send a establish a connection, from a client to a server.
@@ -80,11 +80,16 @@ class A_Con:
             self.local_header.set_flags("0100")
 
             # send empty packet with the correct flags
+            print("sendt header")
+            print(self.local_header)
+
             self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
+            # set alle flag til 0
+            self.local_header.set_flags("0000")
 
     # a function to respond to the first connection from a client.
     def answer_hello(self):
-        self.con.settimeout(5)
+        self.con.settimeout(6)
         # check that we have received the first header in the sequence and syn flag is set.
         if self.remote_header.get_syn() and not self.remote_header.get_seqed():
             # setter syn og ack flag i egen header.
@@ -92,24 +97,37 @@ class A_Con:
 
             # lager en tom pakke
             # time.sleep(1)
-            header = self.local_header.build_header()
 
             # answer the hello.
             print("sendt header")
             print(self.local_header)
-            print(f"sender til {self.raddr, self.port}")
-            self.con.sendto(header, (self.raddr, self.port))
+            byte_header = self.local_header.build_header()
+            self.con.sendto(byte_header, (self.raddr, self.port))
+
 
         try:
             data, addr = self.con.recvfrom(500)
         except:
-            print(f"couldn't establish connection with {self.raddr}:{self.port}")
+            print(f"couldn't establish connection with {self.raddr}:{self.port}\n timed out")
             sys.exit(1)
 
         self.remote_header, body = split_packet(data)
-
+        print("mottat header")
         print(self.remote_header)
-        # if self.remote_header.get_ack() and self.remote_header.get_seqed() == self.local_header.get_seqed():
+
+        if self.remote_header.get_ack() and self.remote_header.get_seqed():
+            self.local_header.increment_seqed()
+            self.local_header.increment_acked()
+
+
+    def client_compare_headers(self):
+        if self.remote_header.get_ack() and self.remote_header.get_seqed() == self.local_header.get_seqed():
+            print("godkjent")
+            self.local_header.increment_acked()
+
+        print("sjekk headers!")
+
+
 
 
 # Det som mangler i A_con: Sende FIN header (si ha det)
@@ -125,18 +143,43 @@ class StopWait(A_Con):
     def send(self, data):
 
         # lager pakke og sender den.
+        print("sending data with header:")
+        print(self.local_header)
         pakke = self.create_packet(data)
         self.con.sendto(pakke, (self.raddr, self.port))
 
+        try:
+            data, addr = self.con.recvfrom(12)
+        except TimeoutError:
+            self.send(data)
+            return
+
+        self.remote_header, body = split_packet(data)
+
+        if not self.client_compare_headers():
+            self.send(data)
+
+        self.local_header.increment_seqed()
+
+
+
     def recv(self, chunk_size):
+
         if not self.local_header.get_seqed():
             self.answer_hello()
 
         data, addr = self.con.recvfrom(chunk_size)
         self.remote_header, body = split_packet(data)
+
+
         print("mottat header")
         print(self.remote_header)
-        return body
+
+        print(f"\n\n{body}\n\n")
+        if body:
+            return body
+        else:
+            return None
 
 
 # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
@@ -151,8 +194,7 @@ class GoBackN(A_Con):
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
     def send(self, data):
-        if self.local_header.get_seqed() == 0:
-            self.send_hello()
+        print("send hello først")
 
 
 class SelectiveRepeat(A_Con):
@@ -164,8 +206,7 @@ class SelectiveRepeat(A_Con):
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
     def send(self, data):
-        if self.local_header.get_seqed() == 0:
-            self.send_hello()
+        print("send hello først")
 
 
 class Header:
@@ -219,6 +260,10 @@ class Header:
     """
     bare uinteressante getter/setter under her!
     """
+
+    def increment_both(self):
+        self.seqed += 1
+        self.acked += 1
 
     def increment_seqed(self):
         self.seqed += 1

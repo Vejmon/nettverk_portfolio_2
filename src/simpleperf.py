@@ -81,7 +81,6 @@ def valid_file(name):
 # https://stackoverflow.com/questions/13852700/create-file-but-if-name-exists-add-number
 def get_save_file(path):
     file = path.split('/')[-1]
-    print(file)
     filename, extension = os.path.splitext(file)
 
     counter = 1
