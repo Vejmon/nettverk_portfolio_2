@@ -67,7 +67,7 @@ class A_Con:
         header_data, body = split_packet(data)
         self.remote_header = Header(header_data)
         if self.remote_header.get_ack() and self.remote_header.get_syn:
-            self.local_header.increment_seq()
+            self.local_header.increment_seqed()
             self.local_header.set_flags("0100")
 
             self.con.sendto(self.create_packet(b'0'), (self.raddr, self.port))
@@ -185,15 +185,6 @@ class Header:
     def build_header(self):
         return pack(header_format, self.seqed, self.acked, self.get_flags(), self.win)
 
-    def increment_seq(self):
-        self.seqed += 1
-
-    def get_seqed(self):
-        return self.seqed
-
-    def get_acked(self):
-        return self.acked
-
     def set_flags(self, integer_4bit):
         integer = int(integer_4bit)
         self.syn = integer & (1 << 3)
@@ -203,6 +194,27 @@ class Header:
     def get_flags(self):
         flags = str(self.syn) + str(self.ack) + str(self.fin) + "0"
         return int(flags)
+
+    """
+    bare uinteressante getter/setter under her!
+    """
+
+    def increment_seqed(self):
+        self.seqed += 1
+
+    def set_seqed(self, seqed):
+        self.seqed = seqed
+
+    def get_seqed(self):
+        return self.seqed
+
+    def increment_acked(self):
+        self.acked += 1
+
+    def set_acked(self, acked):
+        self.acked = acked
+    def get_acked(self):
+        return self.acked
 
     def set_ack(self, one_or_zero):
         if one_or_zero:
