@@ -4,7 +4,6 @@ import sys
 import argparse
 import socket
 import os
-import random
 import threading as th
 import ipaddress
 import time
@@ -78,6 +77,20 @@ def valid_file(name):
         print(f"couldn't find requested file, please make sure {name} is present in the img folder")
         sys.exit(1)
 
+# modifisert denne noe:
+# https://stackoverflow.com/questions/13852700/create-file-but-if-name-exists-add-number
+def get_save_file(path):
+    file = path.split('/')[-1]
+    print(file)
+    filename, extension = os.path.splitext(file)
+
+    counter = 1
+    while os.path.exists(path):
+        file = path.split('/')[-1]
+        path = path[:-len(file)] + filename + "(" + str(counter) + ")" + extension
+        counter += 1
+    return path
+
 
 # parse arguments the user may input when running the skript, some are required in a sense, others are optional
 def get_args():
@@ -131,7 +144,7 @@ def client():
         cli_sock.bind((args.bind, args.port))
         method.set_con(cli_sock)
 
-        method.send_hello(args.file)
+        method.send_hello(args.file.split('/')[-1])
 
         # sender pakker så lenge det fins deler å lese
         with open(args.file, 'rb') as fil:
@@ -178,10 +191,15 @@ def server():
             print(remote_client.remote_header)
 
             # lager en random fil i ut mappen
+            filnavn = en_client['fil']
+            print(f"\n\n\n{filnavn}\n\n\n")
             abs = os.path.dirname(__file__)
-            hash = random.getrandbits(128)
-            path = abs + f"/../ut/{hash}.pic"
-            open(path, "x")
+            abs = abs[:-4]
+
+            path = abs + f"/ut/{filnavn}"
+            unik_fil = get_save_file(path)
+            open(unik_fil, "xb")
+            print(f"\n\n{unik_fil}\n\n")
 
             # write to file as long as transmission isn't done.
             while not remote_client.local_header.get_fin():

@@ -26,7 +26,7 @@ def split_packet(data):
 class A_Con:
 
     def grab_json(self, file_name):
-        return '{"laddr": "%s", "raddr": "%s", "port": %s, "typ": "%s", "fil", "%s"}' % \
+        return '{"laddr": "%s", "raddr": "%s", "port": %s, "typ": "%s", "fil": "%s"}' % \
         (self.laddr, self.raddr, self.port, type(self).__name__, file_name)
 
     def __str__(self):
@@ -51,11 +51,11 @@ class A_Con:
         return packet
 
     # a function used to send a establish a connection, from a client to a server.
-    def send_hello(self):
+    def send_hello(self, fil_name):
         self.local_header.set_syn(True)
         # set syn flag to 1
         # body is a json object, carrying information about the client.
-        body = self.__str__().encode()
+        body = self.grab_json(fil_name).encode()
         packet = self.create_packet(body)
         print("sendt header")
         print(self.local_header)
@@ -123,10 +123,6 @@ class StopWait(A_Con):
         self.window = 1
 
     def send(self, data):
-
-        # if we are sending the first packet, we are establishing a connection first.
-        if not self.local_header.get_seqed():
-            self.send_hello()
 
         # lager pakke og sender den.
         pakke = self.create_packet(data)
