@@ -100,7 +100,7 @@ class A_Con:
             self.local_header.set_flags("0100")
 
             # send empty packet with the ack_flag. before transmitting data.
-            print("sendt header")
+            print("siste svar: sendt header")
             print(self.local_header)
             self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
             # set alle flag til 0
@@ -150,10 +150,15 @@ class A_Con:
             print("mottat header")
             print(self.remote_header)
 
+
             if self.remote_header.get_ack() and self.remote_header.get_acked():
+
                 # increment secked and acked, and set only ack flag for future responses
                 self.local_header.set_flags("0100")
                 self.local_header.increment_both()
+
+                print("lokal pakke ser slik ut!")
+                print(self.local_header.__str__())
                 return True
 
         # gir opp hvis flagg fra client ikke er satt riktig.
