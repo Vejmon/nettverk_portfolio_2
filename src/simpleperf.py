@@ -112,7 +112,7 @@ def get_args():
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
                        help="ipv4 address to connect with, default connects with node h1")
-    parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",
+    parse.add_argument('-f', '--file', type=valid_file, default="alle_dyr.png",
                        help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
     parse.add_argument('-r', '--reli', choices=['sw', 'sr', 'gbn'], default="sw",
                        help='choose which method used for reliable transfer, '
@@ -130,34 +130,37 @@ if not (args.server ^ args.client):
 
 
 def client():
+
+    # sets method for reliable transfer.
     if args.reli == "gbn":
         method = DRTP.GoBackN(args.bind, args.serverip, args.port)
     elif args.reli == 'sr':
         method = DRTP.SelectiveRepeat(args.bind, args.serverip, args.port)
     else:
         method = DRTP.StopWait(args.bind, args.serverip, args.port)
+    # binds UDP connection to local ipv4 address and port.
+    method.bind_con()
 
-    # create connection type based upon the arguments.
-    # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cli_sock:
-        cli_sock.bind((args.bind, args.port))
-        method.set_con(cli_sock)
+    # let server know we are trying to connect,
+    # the argument send is the filename we are going to attempt to transmit
+    method.send_hello(args.file.split('/')[-1])
 
-        method.send_hello(args.file.split('/')[-1])
-
-        # sender pakker så lenge det fins deler å lese
-        with open(args.file, 'rb') as fil:
+    # sender pakker så lenge det fins deler å lese
+    with open(args.file, 'rb') as fil:
+        chunk = fil.read(1460)
+        while chunk:
+            method.send(chunk)
             chunk = fil.read(1460)
-            while chunk:
-                method.send(chunk)
-                chunk = fil.read(1460)
 
 
 def server():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as serv_sock:
         serv_sock.bind((args.bind, args.port))
-        print(f"server at {args.bind}:{args.port} is ready to receive")
         while True:
+            print(f"server at {args.bind}:{args.port} is ready to receive")
+            # wait indefinetly for a new connection
+            serv_sock.settimeout(None)
+
             # recieve first syn from client
             try:
                 data, addr = serv_sock.recvfrom(500)
@@ -165,11 +168,13 @@ def server():
                 print("Keyboard interrupt recieved, exiting server")
                 sys.exit(1)
 
+            # grab header and body from the packet.
             header, body = DRTP.split_packet(data)
 
             en_client = json.loads(body.decode())
 
-            # creates a "creates" a clone of the client attempting to connect.
+            # create a server version of the client attempting to connect,
+            # we grab the -r and -f flag from the client. (reliable method and filename)
             if en_client['typ'] == 'GoBackN':
                 remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port)
             elif en_client['typ'] == 'StopWait':
@@ -177,35 +182,46 @@ def server():
             elif en_client['typ'] == 'SelectiveRepeat':
                 remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'], args.port)
             else:
+                # quit if something unforeseen has happened
                 print("client information insuficient, exiting")
                 sys.exit()
 
-            # setter mottat header.
+            # hands over the received header from the connected client
             remote_client.remote_header = header
 
-            # hands the socket over,
+            # hands the socket over, for future transfers.
             remote_client.set_con(serv_sock)
 
             print("mottat header")
             print(remote_client.remote_header)
 
-            # lager en fil fil i ut mappen
-            # hvis filen fins, inkrementerer med 1
-            filnavn = en_client['fil']
-            abs = os.path.dirname(__file__)
-            # hopper ut av src mappen
-            abs = abs[:-4]
-            path = abs + f"/ut/{filnavn}"
-            unik_fil = get_save_file(path)
+            # start over if the remote client doesn't respond to our answer
+            if remote_client.answer_hello():
+                # lager en fil fil i ut mappen
+                # hvis filen fins, inkrementerer med 1
+                filnavn = en_client['fil']
+                abs = os.path.dirname(__file__)
+                # hopper ut av src mappen
+                abs = abs[:-4]
+                path = abs + f"/ut/{filnavn}"
+                # ser om filen allerede fins, lager nytt navn i det tilfelle
+                unik_fil = get_save_file(path)
+                # lager en tom fil.
+                open(unik_fil, "xb")
 
-            open(unik_fil, "xb")
+                # write to file as long as transmission isn't done and there is something in data.
+                while not remote_client.local_header.get_fin() and data:
+                    data = remote_client.recv(1500)
+                    with open(path, "ab") as skriv:
+                        skriv.write(data)
 
-            # write to file as long as transmission isn't done.
-            while not remote_client.local_header.get_fin():
-                data = remote_client.recv(1500)
-                with open(path, "ab") as skriv:
-                    skriv.write(data)
-
+                # we can infer that the transfer failed if we never got a fin flag,
+                # in that case we remove the half transfered file.
+                if not remote_client.remote_header.get_fin():
+                    print("removing failed file")
+                    os.remove(path)
+                # else:
+                # remote_client.answer_fin() fix fix
 
 if args.server:
     server()
