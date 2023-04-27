@@ -127,8 +127,11 @@ class A_Con:
             # create empty packet
             packet = self.create_packet(None)
 
-            counter = 0
+            # set empty data to silence warning
+            data = b''
+
             # attempt to transmit an answer four times.
+            counter = 0
             while counter < 4:
                 self.con.sendto(packet, (self.raddr, self.port))
                 try:
@@ -157,12 +160,36 @@ class A_Con:
         else:
             return False
 
+    def server_compare_headers(self):
+        print("\nremote header")
+        print(self.remote_header)
+        print("local header")
+        print(self.local_header.__str__() + "\n")
+
+        if not self.remote_header.get_ack() and self.local_header.get_seqed() == self.remote_header.get_seqed() -1:
+            if self.remote_header.get_acked() == self.local_header.get_acked():
+                print("godkjent")
+                self.local_header.increment_both()
+
+        print("sjekk headers")
+        return False
+
+
     def client_compare_headers(self):
+        print("\nremote header")
+        print(self.remote_header)
+        print("local header")
+        print(self.local_header.__str__() + "\n")
+
         if self.remote_header.get_ack() and self.remote_header.get_seqed() == self.local_header.get_seqed():
-            print("godkjent")
-            self.local_header.increment_acked()
+            if self.remote_header.get_acked() == self.local_header.get_acked() -1:
+                print("godkjent")
+                self.local_header.increment_both()
+                return True
 
         print("sjekk headers!")
+        return False
+
 
 
 # Det som mangler i A_con: Sende FIN header (si ha det)
@@ -182,40 +209,55 @@ class StopWait(A_Con):
 
         # lager header med gamle verdier.
         self.local_header = HeaderWithBody(self.local_header.build_header(), data)
-        print("EGEN HEADER:\n\n" + self.local_header.__str__() + "\n\n")
+
         # lager pakke og sender den.
         pakke = self.local_header.complete_packet()
-        self.con.sendto(pakke, (self.raddr, self.port))
 
         counter = 0
-        while counter < 9:
-
+        while counter < 3:
+            self.con.sendto(pakke, (self.raddr, self.port))
             try:
-                data, addr = self.con.recvfrom(12)
+                # recieve data from server
+                recieved_data, addr = self.con.recvfrom(500)
+                # split packet into header and an empty body
+                self.remote_header, body = split_packet(recieved_data)
+                # break loop if ack is received correctly.
+                if self.client_compare_headers():
+                    return
+                else:
+                    counter += 1
             except TimeoutError:
-                print("transfer failed exiting")
+                counter += 1
+            counter += 1
 
-                return
+        if counter == 8:
+            print(f"transfer failed at sequence: {self.local_header.get_seqed()}")
+            sys.exit(1)
 
-        self.remote_header, body = split_packet(data)
-
-        if not self.client_compare_headers():
-            self.send(data)
-
-        self.local_header.increment_both()
 
     def recv(self, chunk_size):
 
-        data, addr = self.con.recvfrom(chunk_size)
-        self.remote_header, body = split_packet(data)
+        self.con.settimeout(3)
+        counter = 0
+        body = None
+        while counter < 3:
+            try:
+                data, addr = self.con.recvfrom(chunk_size)
+                self.remote_header, body = split_packet(data)
+            except TimeoutError:
+                counter += 1
+            if self.server_compare_headers():
+                break
+            else:
+                counter += 1
 
-        print("mottat header")
-        print(self.remote_header)
+            # build new ack
+            pakke = self.local_header.complete_packet()
+            # transfer ack
+            self.con.sendto(pakke, (self.raddr, self.port))
 
-        if body:
-            return body
-        else:
-            return None
+        # return either some bytes, or None
+        return body
 
 
 # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con

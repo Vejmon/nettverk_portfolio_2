@@ -53,6 +53,28 @@ def valid_ip(inn):  # ip address must start with 1-3 digits seperated by a dot, 
         # ipaddress returns an IPv4Address object, we cast it to string our use
     return str(ip)
 
+def valid_rtt(inn):
+    # if the input isn't a float, we complain and quit
+    try:
+        ut = float(inn)
+    except TypeError:
+        raise argparse.ArgumentTypeError(f"RTT must be a float, {inn} isn't")
+    # if the input isn't within range, we complain and quit
+    if not (1 <= ut):
+        raise argparse.ArgumentTypeError(f'RTT: ({inn}) must be a positive float')
+    return ut
+
+# check if the argument deciding window size is valid.
+def valid_window(inn):
+    # if the input isn't an integer, we complain and quit
+    try:
+        ut = int(inn)
+    except TypeError:
+        raise argparse.ArgumentTypeError(f"window must be an integer, {inn} isn't")
+    # if the input isn't within range, we complain and quit
+    if not (1 <= ut ):
+        raise argparse.ArgumentTypeError(f'window number: ({inn}) must be a positive integer')
+    return ut
 
 # check if port is an integer and between 1024 - 65535
 def valid_port(inn):
@@ -117,6 +139,12 @@ def get_args():
     parse.add_argument('-r', '--reli', choices=['sw', 'sr', 'gbn'], default="sw",
                        help='choose which method used for reliable transfer, '
                             'sw is stop wait, gbn is go back n, sr is selective repeat.')
+    parse.add_argument('-w', '--window', type=valid_window, default=5,
+                       help='window size used for reliable transfer, when using "go back n" or "selective repeat"'
+                            'window size must be a positive integer')
+    parse.add_argument('-R', '--RTT', type=valid_rtt, default=0.05,
+                       help='set round-trip-time for the client connection in ms, may be a float.'
+                            'RTT must be a positive float.')
 
     # parse the arguments
     return parse.parse_args()
