@@ -91,7 +91,7 @@ def valid_port(inn):
 
 # attempts to grab a specified file.
 def valid_file(name):
-    abs = os.path.dirname(__file__)
+    abs = os.path.abspath(os.path.dirname(__file__))
     path = abs + f"/../img/{name}"
     if os.path.isfile(path):
         return path
@@ -213,7 +213,6 @@ def server():
                 print("wrong packet received, body is not a JSON!, restarting server")
                 break
 
-
             # create a server version of the client attempting to connect,
             # we grab the -r and -f flag from the client. (reliable method and filename)
             if en_client['typ'] == 'GoBackN':
@@ -241,7 +240,7 @@ def server():
                 # lager en fil fil i ut mappen
                 # hvis filen fins, inkrementerer med 1
                 filnavn = en_client['fil']
-                abs = os.path.dirname(__file__)
+                abs = os.path.abspath(os.path.dirname(__file__))
                 # hopper ut av src mappen
                 abs = abs[:-4]
                 path = abs + f"/ut/{filnavn}"

@@ -7,6 +7,7 @@ from struct import *
 header_format = '!IIHH'
 
 
+
 def split_packet(data):
     header_data = data[:12]
     body = False
@@ -39,10 +40,10 @@ class A_Con:
         self.laddr = laddr
         self.raddr = raddr
         self.port = port
-        self.previous_packet = HeaderWithBody(bytearray(12), None)  # previous packet sent from client
-        self.local_header = HeaderWithBody(bytearray(12), None)  # header we are attempting to send now
-        self.remote_header = Header(bytearray(12))  # response header from server
-        self.con = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # connection we are attempting to transmit over
+        self.previous_packet = HeaderWithBody(bytearray(12), None)      # previous packet sent from client
+        self.local_header = HeaderWithBody(bytearray(12), None)         # header we are attempting to send now
+        self.remote_header = Header(bytearray(12))                      # response header from server
+        self.con = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)     # connection we are attempting to transmit over
 
     # loop at server hands over connection
     def set_con(self, con):
@@ -78,46 +79,38 @@ class A_Con:
         # attempt four times to start a connection
         self.con.sendto(packet, (self.raddr, self.port))
 
-        self.con.settimeout(2)
+        self.con.settimeout(9)
 
         # wait for a response from the server
         try:
             data, addr = self.con.recvfrom(500)
         except TimeoutError:
-            print(f"Coulnd't establish a connection to {self.raddr}:{self.port}")
+            print(f"Couldn't establish a connection to {self.raddr}:{self.port}")
             sys.exit(1)
 
         # grab the header from the response packet
         self.remote_header, body = split_packet(data)
-        print("mottat ack fra server header")
+        print("mottat header")
         print(self.remote_header)
 
         # check if ack flag, and syn flag are set, from response
         if self.remote_header.get_ack() and self.remote_header.get_syn():
-            # increment acked og seqed, in next header
-            self.local_header.increment_both()
             # set only ack flag in next header.
             self.local_header.set_flags("0100")
 
             # send empty packet with the ack_flag. before transmitting data.
             print("siste svar: sendt header")
             print(self.local_header)
-
             self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
-            # set alle flag til 0 på client
+            # set alle flag til 0
             self.local_header.set_flags("0000")
-
-            # set previous_packet to the one we sent now.
-            self.previous_packet = self.local_header
         else:
             print("Header from server has insuficient data!")
 
     # a function to respond to the first connection from a client.
-
     def answer_hello(self):
         # set wait timeout, set to rtt in future fix fix
         self.con.settimeout(2)
-
         # check that and syn flag is set in first packet.
         if self.remote_header.get_syn():
 
@@ -125,55 +118,50 @@ class A_Con:
             self.local_header.set_acked(self.remote_header.get_acked())
             self.local_header.set_seqed(self.remote_header.get_seqed())
 
-            # setter syn and ack in response header.
+            # setter syn og ack flag i egen header.
             self.local_header.set_flags("1100")
 
+            print("sendt header")
+            print(self.local_header)
             # create empty packet
             packet = self.create_packet(None)
 
-            # attempt to transmit an answer four times.
-            print("første ack til server")
-            print(self.local_header)
+            # set empty data to silence warning
+            data = b''
 
+            # attempt to transmit an answer four times.
             counter = 0
             while counter < 4:
                 self.con.sendto(packet, (self.raddr, self.port))
                 try:
                     data, addr = self.con.recvfrom(500)
-                    # grab header from received packet
-                    self.remote_header, body = split_packet(data)
-
-                    # break out of loop if successfully received packet
                     break
                 except TimeoutError:
                     counter += 1
 
-            # give up establishing connection after four tries.
+            # gir opp hvis vi har prøvd 4 ganger.
             if counter == 3:
                 print(f'unable to establish connection with {self.raddr}:{self.port}')
                 return False
 
-            print("mottat siste ack fra client header")
+            # grab header from received packet
+            self.remote_header, body = split_packet(data)
+
+            print("mottat header")
             print(self.remote_header)
 
-            counter = 0
-            while counter < 4:
-                if self.remote_header.get_ack() and self.remote_header.get_acked():
 
-                    # increment secked and acked, and set only ack flag for future responses
-                    self.local_header.set_flags("0100")
-                    self.local_header.increment_both()
+            if self.remote_header.get_ack():
 
-                    print("lokal pakke ser slik ut!")
-                    print(self.local_header.__str__())
-                    return True
+                # increment secked and acked, and set only ack flag for future responses
+                self.local_header.set_flags("0100")
 
-                # gir opp hvis flagg fra client ikke er satt riktig.
-                else:
-                    self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
-                    counter += 1
+                print("lokal pakke ser slik ut!")
+                print(self.local_header.__str__())
+                return True
 
-            print("server gir opp")
+        # gir opp hvis flagg fra client ikke er satt riktig.
+        else:
             return False
 
     def server_compare_headers(self):
@@ -182,16 +170,14 @@ class A_Con:
         print("local header")
         print(self.local_header.__str__() + "\n")
 
-        if not self.remote_header.get_ack() and self.local_header.get_seqed() == self.remote_header.get_seqed() - 1:
-            if self.remote_header.get_acked() == self.local_header.get_acked():
+        if not self.remote_header.get_ack():
+            if self.remote_header.get_seqed() == self.local_header.get_seqed() +1:
+                self.local_header.increment_acked()
                 print("godkjent")
-
-                # save old header before incrementing
-                self.previous_packet = self.local_header
-                self.local_header.increment_both()
 
         print("sjekk headers")
         return False
+
 
     def client_compare_headers(self):
         print("\nremote header")
@@ -199,15 +185,14 @@ class A_Con:
         print("local header")
         print(self.local_header.__str__() + "\n")
 
-        if self.remote_header.get_ack() and self.remote_header.get_seqed() == self.local_header.get_seqed():
-            if self.remote_header.get_acked() == self.local_header.get_acked() - 1:
-                print("godkjent")
-                self.previous_packet = self.local_header
-                self.local_header.increment_both()
-                return True
+        if self.remote_header.get_ack() and self.remote_header.get_acked == self.local_header.get_seqed():
+            print("godkjent")
+            self.local_header.increment_seqed()
+            return True
 
         print("sjekk headers!")
         return False
+
 
 
 # Det som mangler i A_con: Sende FIN header (si ha det)
@@ -224,6 +209,7 @@ class StopWait(A_Con):
         self.remote_header = HeaderWithBody(bytearray(12), None)
 
     def send(self, data):
+
         packet = self.create_packet(data)
 
         # attempt four times to send a packet containing bytes with data
@@ -306,7 +292,7 @@ class SelectiveRepeat(A_Con):
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
     def send(self, data):
-        print("send_hello(filnavn) først")
+        print("send hello først")
 
 
 class Header:
