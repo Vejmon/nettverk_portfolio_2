@@ -134,7 +134,7 @@ def get_args():
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
                        help="ipv4 address to connect with, default connects with node h1")
-    parse.add_argument('-f', '--file', type=valid_file, default="alle_dyr.png",
+    parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg", #alle_dyr.png
                        help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
     parse.add_argument('-r', '--reli', choices=['sw', 'sr', 'gbn'], default="sw",
                        help='choose which method used for reliable transfer, '
@@ -173,11 +173,18 @@ def client():
     # the argument send is the filename we are going to attempt to transmit
     method.send_hello(args.file.split('/')[-1])
 
-    # sender pakker så lenge det fins deler å lese
+    # sender pakker så lenge det fins deler å lese og forige sending gikk bra
+    send_succesfull = True
     with open(args.file, 'rb') as fil:
         chunk = fil.read(1460)
+        # create first packet so that we don't send an extra empty packet.
+
         while chunk:
-            method.send(chunk)
+            if send_succesfull:
+                send_succesfull = method.send(chunk)
+            else:
+                print("sending failed! exiting")
+                sys.exit(1)
             chunk = fil.read(1460)
 
 
@@ -198,8 +205,14 @@ def server():
 
             # grab header and body from the packet.
             header, body = DRTP.split_packet(data)
+            # if an old client is still attempting to send packets, there might be some issues
+            try:
+                en_client = json.loads(body.decode())
+            except UnicodeDecodeError:
+                serv_sock.close()
+                print("wrong packet received, body is not a JSON!, restarting server")
+                break
 
-            en_client = json.loads(body.decode())
 
             # create a server version of the client attempting to connect,
             # we grab the -r and -f flag from the client. (reliable method and filename)
@@ -240,8 +253,9 @@ def server():
                 # write to file as long as transmission isn't done and there is something in data.
                 while not remote_client.local_header.get_fin() and data:
                     data = remote_client.recv(1500)
-                    with open(path, "ab") as skriv:
-                        skriv.write(data)
+                    if data:
+                        with open(path, "ab") as skriv:
+                            skriv.write(data)
 
                 # we can infer that the transfer failed if we never got a fin flag,
                 # in that case we remove the half transfered file.
@@ -250,6 +264,10 @@ def server():
                     os.remove(path)
                 # else:
                 # remote_client.answer_fin() fix fix
+
+        # restarts server after an error ocurs
+        time.sleep(3)
+        server()
 
 if args.server:
     server()
