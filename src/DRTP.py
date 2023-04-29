@@ -7,7 +7,6 @@ from struct import *
 header_format = '!IIHH'
 
 
-
 def split_packet(data):
     header_data = data[:12]
     body = False
@@ -174,7 +173,7 @@ class A_Con:
             print("godkjent")
             return True
 
-        print("sjekk headers")
+        print("sjekk headers Server")
         return False
 
     def client_compare_headers(self):
@@ -187,7 +186,7 @@ class A_Con:
             print("godkjent")
             return True
 
-        print("sjekk headers!")
+        print("sjekk headers Client!")
         return False
 
 
@@ -205,6 +204,7 @@ class StopWait(A_Con):
         self.local_header = HeaderWithBody(bytearray(12), None)
         self.remote_header = HeaderWithBody(bytearray(12), None)
 
+    #Send data, receive ack: Client side
     def send(self, data):
         
         self.local_header.increment_seqed()
