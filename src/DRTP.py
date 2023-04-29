@@ -262,6 +262,9 @@ class GoBackN(A_Con):
     def __init__(self, laddr, raddr, port):
         super().__init__(laddr, raddr, port)
         self.window = 5
+        self.timeout = 0.5
+        self.expected_seq_num = 1
+        self.next_seq_num = 1
 
     def lists_of_headers(self):
         sendt_packets = []
@@ -275,7 +278,13 @@ class GoBackN(A_Con):
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
     def send(self, data):
-        print("send_hello(filnavn) først!")
+        # while self.next_seq_num <= min(self.expected_seq_num + self.window - 1, len(data)):
+
+        print("send hello først")
+
+
+    def recv(self):
+        print("")
 
 
 class SelectiveRepeat(A_Con):
