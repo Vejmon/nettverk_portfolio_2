@@ -108,7 +108,7 @@ def get_save_file(path):
     counter = 1
     while os.path.exists(path):
         file = path.split('/')[-1]
-        path = path[:-len(file)] + filename + "(" + str(counter) + ")" + extension
+        path = path[:-len(file)] + filename + "_" + str(counter) + extension
         counter += 1
     return path
 
@@ -179,13 +179,17 @@ def client():
         chunk = fil.read(1460)
         # create first packet so that we don't send an extra empty packet.
 
-        while chunk:
-            if send_succesfull:
-                send_succesfull = method.send(chunk)
-            else:
-                print("sending failed! exiting")
-                sys.exit(1)
+        while chunk and send_succesfull:
+            send_succesfull = method.send(chunk)
             chunk = fil.read(1460)
+
+    # if we got this far, we send a last packet with the fin flag.
+    if send_succesfull:
+        method.send_fin()
+    else:
+        print("sending failed! exiting")
+        sys.exit(1)
+
 
 
 def server():
@@ -208,9 +212,14 @@ def server():
             # if an old client is still attempting to send packets, there might be some issues
             try:
                 en_client = json.loads(body.decode())
+
             except UnicodeDecodeError:
                 serv_sock.close()
-                print("wrong packet received, body is not a JSON!, restarting server")
+                print("wrong packet received, body is not a JSON! \nrestarting server")
+                break
+            except AttributeError:
+                serv_sock.close()
+                print("wrong packet received, body is not a JSON! \nrestarting server")
                 break
 
             # create a server version of the client attempting to connect,
@@ -246,23 +255,27 @@ def server():
                 path = abs + f"/ut/{filnavn}"
                 # ser om filen allerede fins, lager nytt navn i det tilfelle
                 unik_fil = get_save_file(path)
+
                 # lager en tom fil.
-                open(unik_fil, "xb")
+                print("making empty file at \n"+unik_fil)
+                open(unik_fil, "x")
 
                 # write to file as long as transmission isn't done and there is something in data.
-                while not remote_client.local_header.get_fin() and data:
+                with open(unik_fil, "ab") as skriv:
                     data = remote_client.recv(1500)
-                    if data:
-                        with open(path, "ab") as skriv:
-                            skriv.write(data)
+
+                    while not remote_client.local_header.get_fin() and data:
+                        skriv.write(data)
+                        data = remote_client.recv(1500)
+                # if we received a fin flag, we say goodbye
+                if remote_client.remote_header.get_fin():
+                    remote_client.answer_fin()
 
                 # we can infer that the transfer failed if we never got a fin flag,
                 # in that case we remove the half transfered file.
-                if not remote_client.remote_header.get_fin():
+                else:
                     print("removing failed file")
                     os.remove(path)
-                # else:
-                # remote_client.answer_fin() fix fix
 
         # restarts server after an error ocurs
         time.sleep(3)

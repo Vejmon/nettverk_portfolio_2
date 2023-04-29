@@ -39,6 +39,7 @@ class A_Con:
         self.laddr = laddr
         self.raddr = raddr
         self.port = port
+        self.timeout = 2
         self.previous_packet = HeaderWithBody(bytearray(12), None)      # previous packet sent from client
         self.local_header = HeaderWithBody(bytearray(12), None)         # header we are attempting to send now
         self.remote_header = Header(bytearray(12))                      # response header from server
@@ -78,7 +79,7 @@ class A_Con:
         # attempt four times to start a connection
         self.con.sendto(packet, (self.raddr, self.port))
 
-        self.con.settimeout(9)
+        self.con.settimeout(self.timeout)
 
         # wait for a response from the server
         try:
@@ -109,7 +110,7 @@ class A_Con:
     # a function to respond to the first connection from a client.
     def answer_hello(self):
         # set wait timeout, set to rtt in future fix fix
-        self.con.settimeout(2)
+        self.con.settimeout(self.timeout)
         # check that and syn flag is set in first packet.
         if self.remote_header.get_syn():
 
@@ -163,13 +164,49 @@ class A_Con:
         else:
             return False
 
+    def send_fin(self):
+
+        # build a last packet with fin flag set
+        self.local_header.set_fin(True)
+        self.local_header.increment_seqed()
+        self.con.settimeout(self.timeout)
+        print("sending fin_packet")
+        # send packet untill we get the "fin_ack"
+        for i in range(6):
+            self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
+
+            try:
+                data, addr = self.con.recvfrom(50)
+                self.remote_header, body = split_packet(data)
+                # if we got the next header in sequence with a syn flag set we are done
+                if self.client_compare_headers() and self.remote_header.get_fin():
+                    self.con.close()
+                    print("fin_ack received, quitting")
+                    return
+            except socket.timeout:
+                print("didn't receive fin_ack, attempting again")
+
+            except TimeoutError:
+                print("didn't receive fin_ack, attempting again")
+
+        print("never got a fin_ack, giving up")
+
+
+    def answer_fin(self):
+
+        print("sending fin_ack")
+        self.local_header.set_fin(True)
+        self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
+
     def server_compare_headers(self):
         print("\nremote header")
-        print(self.remote_header)
+        print(self.remote_header.__str__())
         print("local header")
         print(self.local_header.__str__() + "\n")
 
-        if self.remote_header.get_seqed() == self.local_header.get_acked() +1:
+        # check if the packet is on the next sequence, and that the old packet has been acked.
+        if self.remote_header.get_seqed() == self.local_header.get_seqed() + 1 \
+                and self.remote_header.get_acked() == self.local_header.get_acked():
             print("godkjent")
             return True
 
@@ -178,11 +215,13 @@ class A_Con:
 
     def client_compare_headers(self):
         print("\nremote header")
-        print(self.remote_header)
+        print(self.remote_header.__str__())
         print("local header")
         print(self.local_header.__str__() + "\n")
 
-        if self.remote_header.get_ack() and self.remote_header.get_acked == self.local_header.get_seqed():
+        # if the remote header is on the same sequence, and has acked the packet, we move on
+        if self.remote_header.get_ack() and self.remote_header.get_acked() == (self.local_header.get_acked() + 1) \
+                and self.remote_header.get_seqed() == self.local_header.get_seqed():
             print("godkjent")
             return True
 
@@ -204,26 +243,23 @@ class StopWait(A_Con):
         self.local_header = HeaderWithBody(bytearray(12), None)
         self.remote_header = HeaderWithBody(bytearray(12), None)
 
-    #Send data, receive ack: Client side
+    # Send data, receive ack: Client side
     def send(self, data):
         
         self.local_header.increment_seqed()
         self.local_header.body = data
         pakke = self.local_header.complete_packet()
 
-        # Set timeout for resending packet
-        #self.con.settimeout(0.5)
-
-        #Try to send the packet 6 times
+       # Try to send the packet 6 times
         for i in range(6):
-            print(i)
-            self.con.settimeout(0.5) # Set timeout for resending packet
+
+            self.con.settimeout(self.timeout)                    # Set timeout for resending packet
             self.con.sendto(pakke, (self.raddr, self.port))
             try:
-                data, addr = self.con.recvfrom(12)
-                self.remote_header, body = split_packet(data)
-                if self.client_compare_headers(): # Sjekker at ack flagget er satt og at acked = seqed
-                    self.local_header.increment_both() # Øker ack number
+                remote_data, addr = self.con.recvfrom(50)
+                self.remote_header, body = split_packet(remote_data)
+                if self.client_compare_headers():           # Sjekker at ack flagget er satt og at acked = seqed
+                    self.local_header.increment_acked()     # Øker ack number
                     return True
 
             except TimeoutError:
@@ -237,23 +273,33 @@ class StopWait(A_Con):
     #Receive data, send ack: Server side
     def recv(self, chunk_size):
         #Timeout
-        self.con.settimeout(4)
+        self.con.settimeout(self.timeout)
 
-        try:
-            data, addr = self.con.recvfrom(chunk_size)
-            self.remote_header, body = split_packet(data)
-            if self.server_compare_headers():
-                self.local_header.increment_both()
-                pakke = self.local_header.complete_packet()
-                self.con.sendto(pakke, (self.raddr, self.port))
-                return body
-        except socket.timeout:
-            print("gir opp")
-            return False
+        # recieve packets untill we have the one we are looking for.
+        # quit if we never receive a packet.
+        for i in range(6):
+            try:
+                data, addr = self.con.recvfrom(chunk_size)
+                self.remote_header, body = split_packet(data)
+                # if we got the correct packet, we increment our header, and return the data.
+                if self.server_compare_headers():
+                    self.local_header.increment_both()
+                    pakke = self.local_header.complete_packet()
+                    self.con.sendto(pakke, (self.raddr, self.port))
+                    return body
+                else:
+                    # resend old ack
+                    self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
 
-        except TimeoutError:
-            print("gir opp")
-            return False
+            except socket.timeout:
+                print("prøver igjen")
+
+            except TimeoutError:
+                print("prøver igjen")
+
+        return None
+
+
 
 # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
 # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
