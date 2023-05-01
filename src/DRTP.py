@@ -343,7 +343,6 @@ class GoBackN(A_Con):
     # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
-
     def recv_acks(self):
 
         self.con.settimeout(self.timeout)
@@ -376,6 +375,12 @@ class GoBackN(A_Con):
                 return False
 
         return True
+
+    def send_fin(self):
+        self.local_header.set_fin(True)
+        self.send(b'')
+
+        # fix fix fortsett her!
 
     def send(self, data):
 
