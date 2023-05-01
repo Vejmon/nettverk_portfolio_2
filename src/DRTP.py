@@ -203,8 +203,7 @@ class A_Con:
         print(self.local_header.__str__() + "\n")
 
         # check if the packet is on the next sequence, and that the old packet has been acked.
-        if self.remote_header.get_seqed() == self.local_header.get_seqed() + 1 \
-                and self.remote_header.get_acked() == self.local_header.get_acked():
+        if self.remote_header.get_seqed() == self.local_header.get_acked() + 1:
             print("godkjent")
             return True
 
@@ -218,8 +217,7 @@ class A_Con:
         print(self.local_header.__str__() + "\n")
 
         # if the remote header is on the same sequence, and has acked the packet, we move on
-        if self.remote_header.get_ack() and self.remote_header.get_acked() == (self.local_header.get_acked() + 1) \
-                and self.remote_header.get_seqed() == self.local_header.get_seqed():
+        if self.remote_header.get_ack() and self.remote_header.get_acked() == self.remote_header.get_seqed():
             print("godkjent")
             return True
 
@@ -300,6 +298,36 @@ class StopWait(A_Con):
 # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
 class GoBackN(A_Con):
+
+    def server_compare_headers(self):
+        print("\nremote header")
+        print(self.remote_header.__str__())
+        print("local header")
+        print(self.local_header.__str__() + "\n")
+
+        # check if the packet is on the next sequence, and that the old packet has been acked.
+        if self.remote_header.get_seqed() == self.local_header.get_acked() + 1:
+            print("godkjent")
+            return True
+
+        print("sjekk headers Server")
+        return False
+
+    def client_compare_headers(self):
+        print("\nremote header")
+        print(self.remote_header.__str__())
+        print("local header")
+        print(self.local_header.__str__() + "\n")
+
+        # if the remote header is on the same sequence, and has acked the packet, we move on
+        if self.remote_header.get_ack() and self.remote_header.get_acked() == self.local_header.get_seqed():
+            print("godkjent")
+            return True
+
+        print("sjekk headers Client!")
+        return False
+
+
     def __init__(self, laddr, raddr, port, window):
         super().__init__(laddr, raddr, port, window)
         self.window = window
@@ -333,17 +361,21 @@ class GoBackN(A_Con):
                 print("didn't receive ack")
 
             self.local_header = packet
+            self.local_header.set_acked(self.remote_header.get_acked())
 
-            # check if ack is misplaced
+
+            # if we got wrong ack, delete correctly acked packets, and break loop
             if not self.client_compare_headers():
-                self.sort_list_local_headers(packet)
 
+                index = self.list_local_headers.index(packet)
+                # remove packets before last incorrectly received packet
+                del self.list_local_headers[0:index]
+                for packet in self.list_local_headers:
+                    packet.set_acked(self.remote_header.get_acked())
+                # break out of loop to send new batch of packets.
+                return False
 
-    def sort_list_local_headers(self, packet):
-        index = self.list_local_headers.index(packet)
-        # remove packets before last incorrectly received packet
-        del self.list_local_headers[0:index]
-        # also sorts the list
+        return True
 
     def send(self, data):
 
@@ -359,13 +391,14 @@ class GoBackN(A_Con):
             return True
 
         # send all the packets in order.
+        print("sending packets:\n")
         for packet in self.list_local_headers:
-            print("sending packet:\n")
             print(packet)
             self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
 
         # receive acks from server.
-        self.recv_acks()
+        if self.recv_acks():
+            self.list_local_headers.clear()
 
         return True
 
