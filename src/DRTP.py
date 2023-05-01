@@ -309,14 +309,70 @@ class GoBackN(A_Con):
         self.send_base = 1
         self.list_local_headers = []
         self.list_remote_headers = []
+        self.list_acked_or_seqed = []
+
 
     # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
-    # rekursivt motta pakker til listen er full og vi er klare til å sende.
+
+    def recv_acks(self):
+
+        self.con.settimeout(self.timeout)
+        # receive packets and compare them with the list of sendt packets.
+        for packet in self.list_local_headers:
+
+            try:    # receive acks from server
+                data, addr = self.con.recvfrom(12)
+                header, body = split_packet(data)
+                self.remote_header = header
+
+            except socket.timeout:
+                print("didn't receive ack")
+            except TimeoutError:
+                print("didn't receive ack")
+
+            self.local_header = packet
+
+            # check if ack is misplaced
+            if not self.client_compare_headers():
+                self.sort_list_local_headers(packet)
+
+
+    def sort_list_local_headers(self, packet):
+        index = self.list_local_headers.index(packet)
+        # remove packets before last incorrectly received packet
+        del self.list_local_headers[0:index]
+        # also sorts the list
+
     def send(self, data):
 
-        # Increase seq-number
+        # set seq and create a packet with data ready to be sent.
+        self.local_header.increment_seqed()
+        a_packet = HeaderWithBody(self.local_header.build_header(), data)
+
+        # append the packet to list of outgoing packets
+        self.list_local_headers.append(a_packet)
+
+        # if we are not sending the fin flag, and list is smaller than window we return to add more packets.
+        if not self.local_header.get_fin() and len(self.list_local_headers) < self.window:
+            return True
+
+        # send all the packets in order.
+        for packet in self.list_local_headers:
+            print("sending packet:\n")
+            print(packet)
+            self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
+
+        # receive acks from server.
+        self.recv_acks()
+
+        return True
+
+
+
+
+    """    # Increase seq-number
         self.local_header.increment_seqed()
         # Create a packet body from the data
         self.local_header.body = data
@@ -362,6 +418,8 @@ class GoBackN(A_Con):
 
                     # Set timeout for ACK
                     self.con.settimeout(self.timeout)
+
+                    """
 
     def recv(self, chunk_size):
         # Timeout
