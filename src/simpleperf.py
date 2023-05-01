@@ -53,6 +53,7 @@ def valid_ip(inn):  # ip address must start with 1-3 digits seperated by a dot, 
         # ipaddress returns an IPv4Address object, we cast it to string our use
     return str(ip)
 
+
 def valid_rtt(inn):
     # if the input isn't a float, we complain and quit
     try:
@@ -64,6 +65,7 @@ def valid_rtt(inn):
         raise argparse.ArgumentTypeError(f'RTT: ({inn}) must be a positive float')
     return ut
 
+
 # check if the argument deciding window size is valid.
 def valid_window(inn):
     # if the input isn't an integer, we complain and quit
@@ -72,9 +74,10 @@ def valid_window(inn):
     except TypeError:
         raise argparse.ArgumentTypeError(f"window must be an integer, {inn} isn't")
     # if the input isn't within range, we complain and quit
-    if not (1 <= ut ):
+    if not (1 <= ut):
         raise argparse.ArgumentTypeError(f'window number: ({inn}) must be a positive integer')
     return ut
+
 
 # check if port is an integer and between 1024 - 65535
 def valid_port(inn):
@@ -98,6 +101,7 @@ def valid_file(name):
     else:
         print(f"couldn't find requested file, please make sure {name} is present in the img folder")
         sys.exit(1)
+
 
 # modifisert denne noe:
 # https://stackoverflow.com/questions/13852700/create-file-but-if-name-exists-add-number
@@ -134,7 +138,7 @@ def get_args():
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
                        help="ipv4 address to connect with, default connects with node h1")
-    parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg", #alle_dyr.png
+    parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",  # alle_dyr.png
                        help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
     parse.add_argument('-r', '--reli', choices=['sw', 'sr', 'gbn'], default="sw",
                        help='choose which method used for reliable transfer, '
@@ -158,14 +162,13 @@ if not (args.server ^ args.client):
 
 
 def client():
-
     # sets method for reliable transfer.
     if args.reli == "gbn":
-        method = DRTP.GoBackN(args.bind, args.serverip, args.port)
+        method = DRTP.GoBackN(args.bind, args.serverip, args.port, args.window)
     elif args.reli == 'sr':
-        method = DRTP.SelectiveRepeat(args.bind, args.serverip, args.port)
+        method = DRTP.SelectiveRepeat(args.bind, args.serverip, args.port, args.window)
     else:
-        method = DRTP.StopWait(args.bind, args.serverip, args.port)
+        method = DRTP.StopWait(args.bind, args.serverip, args.port, 1)
     # binds UDP connection to local ipv4 address and port.
     method.bind_con()
 
@@ -191,7 +194,6 @@ def client():
         sys.exit(1)
 
 
-
 def server():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as serv_sock:
         serv_sock.bind((args.bind, args.port))
@@ -211,6 +213,8 @@ def server():
             header, body = DRTP.split_packet(data)
             # if an old client is still attempting to send packets, there might be some issues
             try:
+                print(header)
+
                 en_client = json.loads(body.decode())
 
             except UnicodeDecodeError:
@@ -225,11 +229,11 @@ def server():
             # create a server version of the client attempting to connect,
             # we grab the -r and -f flag from the client. (reliable method and filename)
             if en_client['typ'] == 'GoBackN':
-                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port)
+                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port, args.window)
             elif en_client['typ'] == 'StopWait':
-                remote_client = DRTP.StopWait(args.bind, en_client['laddr'], args.port)
+                remote_client = DRTP.StopWait(args.bind, en_client['laddr'], args.port, 1 )
             elif en_client['typ'] == 'SelectiveRepeat':
-                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'], args.port)
+                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'], args.port, args.window)
             else:
                 # quit if something unforeseen has happened
                 print("client information insuficient, exiting")
@@ -257,7 +261,7 @@ def server():
                 unik_fil = get_save_file(path)
 
                 # lager en tom fil.
-                print("making empty file at \n"+unik_fil)
+                print("making empty file at \n" + unik_fil)
                 open(unik_fil, "x")
 
                 # write to file as long as transmission isn't done and there is something in data.
@@ -277,9 +281,11 @@ def server():
                     print("removing failed file")
                     os.remove(path)
 
+
         # restarts server after an error ocurs
         time.sleep(3)
         server()
+
 
 if args.server:
     server()
