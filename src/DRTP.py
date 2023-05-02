@@ -334,7 +334,7 @@ class GoBackN(A_Con):
     def __init__(self, laddr, raddr, port, window):
         super().__init__(laddr, raddr, port, window)
         self.window = window
-        self.timeout = 3
+        self.timeout = 1
         self.list_local_headers = []
         self.list_remote_headers = []
 
