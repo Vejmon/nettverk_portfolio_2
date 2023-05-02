@@ -171,16 +171,16 @@ class A_Con:
         self.con.settimeout(self.timeout)
         # send packet untill we get the "fin_ack"
         for i in range(6):
-            print("sending fin_packet")
-            self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
 
+            self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
             try:
                 data, addr = self.con.recvfrom(50)
                 self.remote_header, body = split_packet(data)
                 # if we got the next header in sequence with a syn flag set we are done
                 if self.client_compare_headers() and self.remote_header.get_fin():
                     self.con.close()
-                    print("fin_ack received, quitting")
+                    print(f"fin_ack received!\nquitting")
+
                     return
             except socket.timeout:
                 print("didn't receive fin_ack, attempting again")
@@ -192,36 +192,35 @@ class A_Con:
 
     def answer_fin(self):
 
-        print("sending fin_ack")
-        self.local_header.set_fin(True)
+        print("sending fin_ack:\n" + self.local_header.__str__())
         self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
 
     def server_compare_headers(self):
         print("\nremote header")
         print(self.remote_header.__str__())
         print("local header")
-        print(self.local_header.__str__() + "\n")
+        print(self.local_header.__str__())
 
         # check if the packet is on the next sequence, and that the old packet has been acked.
         if self.remote_header.get_seqed() == self.local_header.get_acked() + 1:
-            print("godkjent")
+            print("godkjent\n")
             return True
 
-        print("sjekk headers Server")
+        print("sjekk headers Server\n")
         return False
 
     def client_compare_headers(self):
         print("\nremote header")
         print(self.remote_header.__str__())
         print("local header")
-        print(self.local_header.__str__() + "\n")
+        print(self.local_header.__str__())
 
         # if the remote header is on the same sequence, and has acked the packet, we move on
         if self.remote_header.get_ack() and self.remote_header.get_acked() == self.remote_header.get_seqed():
-            print("godkjent")
+            print("godkjent\n")
             return True
 
-        print("sjekk headers Client!")
+        print("sjekk headers Client!\n")
         return False
 
 
@@ -250,6 +249,7 @@ class StopWait(A_Con):
 
             self.con.settimeout(self.timeout)  # Set timeout for resending packet
             self.con.sendto(pakke, (self.raddr, self.port))
+
             try:
                 remote_data, addr = self.con.recvfrom(50)
                 self.remote_header, body = split_packet(remote_data)
@@ -277,19 +277,22 @@ class StopWait(A_Con):
                 self.remote_header, body = split_packet(data)
                 # if we got the correct packet, we increment our header, and return the data.
                 if self.server_compare_headers():
+                    # increase seqed and acked
                     self.local_header.increment_both()
-                    pakke = self.local_header.complete_packet()
-                    self.con.sendto(pakke, (self.raddr, self.port))
+                    # copy fin flag from client
+                    self.local_header.set_fin(self.remote_header.get_fin())
+
+                    # send ack of new packet
+                    self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
                     return body
                 else:
                     # resend old ack
+                    print("resending old ack:\n" + self.local_header.__str__())
                     self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
 
-            except socket.timeout:
-                print("prøver igjen")
-
             except TimeoutError:
-                print("prøver igjen")
+                print("resending old ack:\n" + self.local_header.__str__())
+                self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
 
         return None
 
