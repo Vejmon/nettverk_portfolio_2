@@ -332,12 +332,8 @@ class GoBackN(A_Con):
         super().__init__(laddr, raddr, port, window)
         self.window = window
         self.timeout = 3
-        self.local_buffer = [None] * self.window
-        self.next_seq_num = 1
-        self.send_base = 1
         self.list_local_headers = []
         self.list_remote_headers = []
-        self.list_acked_or_seqed = []
 
 
     # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
@@ -377,10 +373,10 @@ class GoBackN(A_Con):
         return True
 
     def send_fin(self):
+        # set fin flag in local header
         self.local_header.set_fin(True)
+        # add empty packet to
         self.send(b'')
-
-        # fix fix fortsett her!
 
     def send(self, data):
 
@@ -408,57 +404,6 @@ class GoBackN(A_Con):
         return True
 
 
-
-
-    """    # Increase seq-number
-        self.local_header.increment_seqed()
-        # Create a packet body from the data
-        self.local_header.body = data
-        # Create packet
-        packet = self.local_header.complete_packet()
-
-        # Store packet in local buffer
-        self.local_buffer[self.next_seq_num % self.window] = packet
-
-        # Send packets within window without waiting for ACK for each packet
-        while self.next_seq_num < self.send_base + self.window:
-            # Send packet
-            self.con.sendto(packet, (self.raddr, self.port))
-
-            # If all packets in window have sent, set timeout for ACK
-            if self.send_base == self.next_seq_num:
-                self.con.settimeout(self.timeout)
-
-            # Increase sequence number
-            self.next_seq_num += 1
-
-        # Receive ACKs
-        while True:
-            try:
-                data, addr = self.con.recvfrom(12)
-                self.remote_header, body = split_packet(data)
-
-                # If ACK is invalid, discard
-                if not self.client_compare_headers():
-                    continue
-
-                # Update send_base
-                self.send_base = self.next_seq_num + 1
-
-                # Reset timeout if all packets have been ACKed
-                if self.send_base == self.next_seq_num:
-                    self.con.settimeout(None)
-
-            except socket.timeout:
-                # Retransmit all packets starting from the last ACKed packet
-                for i in range(self.send_base, self.next_seq_num):
-                    self.con.sendto(self.local_buffer[i % self.window], (self.raddr, self.port))
-
-                    # Set timeout for ACK
-                    self.con.settimeout(self.timeout)
-
-                    """
-
     def recv(self, chunk_size):
         # Timeout
         self.con.settimeout(self.timeout)
@@ -471,6 +416,7 @@ class GoBackN(A_Con):
                 self.remote_header, body = split_packet(data)
                 # if we got the correct packet, we increment our header, and return the data.
                 if self.server_compare_headers():
+                    self.local_header.set_fin(self.remote_header.get_fin())
                     self.local_header.increment_both()
                     pakke = self.local_header.complete_packet()
                     self.con.sendto(pakke, (self.raddr, self.port))
