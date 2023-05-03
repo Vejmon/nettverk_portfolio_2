@@ -10,7 +10,7 @@ import time
 import json
 import math
 import DRTP
-
+#eh
 
 # a function to run ifconfig on a node and grab the first ipv4 address we find.
 # which makes sense to set as default address when running in server mode.
@@ -229,11 +229,11 @@ def server():
             # create a server version of the client attempting to connect,
             # we grab the -r and -f flag from the client. (reliable method and filename)
             if en_client['typ'] == 'GoBackN':
-                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port, args.window)
+                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port, en_client['window'])
             elif en_client['typ'] == 'StopWait':
-                remote_client = DRTP.StopWait(args.bind, en_client['laddr'], args.port, 1 )
+                remote_client = DRTP.StopWait(args.bind, en_client['laddr'], args.port, 1)
             elif en_client['typ'] == 'SelectiveRepeat':
-                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'], args.port, args.window)
+                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'], args.port, en_client['window'])
             else:
                 # quit if something unforeseen has happened
                 print("client information insuficient, exiting")
