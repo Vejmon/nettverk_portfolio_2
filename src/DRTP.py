@@ -323,7 +323,8 @@ class GoBackN(A_Con):
         print(self.local_header.__str__() + "\n")
 
         # if the remote header is on the same sequence, and has acked the packet, we move on
-        if self.remote_header.get_ack() and self.remote_header.get_acked() == self.local_header.get_seqed():
+        if self.remote_header.get_ack() and self.remote_header.get_acked() >= self.local_header.get_seqed():
+            self.local_header.set_acked(self.remote_header.get_acked())
             print("godkjent")
             return True
 
@@ -345,41 +346,64 @@ class GoBackN(A_Con):
     def recv_acks(self):
 
         self.con.settimeout(self.timeout)
-        # receive packets and compare them with the list of sendt packets.
+        # receive packets if we timeout we stop receiving and look at what we got.
         for packet in self.list_local_headers:
-
             try:    # receive acks from server
                 data, addr = self.con.recvfrom(12)
                 header, body = split_packet(data)
-                self.remote_header = header
-
-            except socket.timeout:
-                print("didn't receive ack")
+                self.list_remote_headers.append(header)
             except TimeoutError:
-                print("didn't receive ack")
+                print("dropped an ack packet")
+                break
 
-            self.local_header = packet
-            self.local_header.set_acked(self.remote_header.get_acked())
+        # grab largest ack from list of received packets
+        largest_ack = 0
+        print("\nreceived packets:")
+        for packet in self.list_remote_headers:
+            print(packet)
+            if packet.get_acked() > largest_ack:
+                largest_ack = packet.get_acked()
 
+        self.list_remote_headers.clear()
+        print(f"\nbigges ack received: {largest_ack}")
 
-            # if we got wrong ack, delete correctly acked packets, and break loop
-            if not self.client_compare_headers():
+        # find index of item "behind" last acked packet
+        index = 0
+        for pkt in self.list_local_headers:
+            index += 1
+            if pkt.get_seqed() == largest_ack:
+                break
 
-                index = self.list_local_headers.index(packet)
-                # remove packets before last incorrectly received packet
-                del self.list_local_headers[0:index]
-                for packet in self.list_local_headers:
-                    packet.set_acked(self.remote_header.get_acked())
-                # break out of loop to send new batch of packets.
-                return False
+        print(f"index: {index}")
+        # remove packets before last incorrectly received packet
+        del self.list_local_headers[0:index]
 
-        return True
+        print("packets left:")
+        # set last acked in remaining packets
+        for packet in self.list_local_headers:
+            packet.set_acked(largest_ack)
+            print(packet)
+
+        # set local header seqed back to first in list:
+        self.local_header.set_acked(largest_ack)
+
+        # break out of loop to send new batch of packets.
+        if len(self.list_local_headers) == 0:
+            return True
+        else:
+            return False
+
 
     def send_fin(self):
         # set fin flag in local header
         self.local_header.set_fin(True)
         # add empty packet to
         self.send(b'')
+        no_fin_ack = False
+        while not no_fin_ack:
+            no_fin_ack = self.recv_acks()
+
+
 
     def send(self, data):
 
@@ -394,17 +418,36 @@ class GoBackN(A_Con):
         if not self.local_header.get_fin() and len(self.list_local_headers) < self.window:
             return True
 
-        # send all the packets in order.
-        print("sending packets:\n")
-        for packet in self.list_local_headers:
-            print(packet)
-            self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
+        # attempt to send and receive acks, if no acks are present four times we give up.
+        attempt_counter = 0
 
-        # receive acks from server.
-        if self.recv_acks():
-            self.list_local_headers.clear()
+        while True:
+            last_list_size = len(self.list_local_headers)
 
-        return True
+            # send all the packets in order.
+            print("\nsending packets:")
+            for packet in self.list_local_headers:
+                print(packet)
+                self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
+            # attempt to receive acks also trims away acked, packets
+            self.recv_acks()
+
+            # if all packets are acked, we are done with this batch
+            if len(self.list_local_headers) == 0:
+                return True
+            # if list of packets remains the same we try again
+            elif len(self.list_local_headers) == last_list_size:
+                attempt_counter += 1
+
+            # if list is smaller than window, and we don't have the fin flag set in last item we want more packets
+            if len(self.list_local_headers) < self.window and \
+                not self.list_local_headers[len(self.list_local_headers) - 1].get_fin():
+                return True
+
+            # if we receive no acks in four attempts, we quit
+            if attempt_counter == 4:
+                return False
+
 
 
     def recv(self, chunk_size):
@@ -417,21 +460,20 @@ class GoBackN(A_Con):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
-                # if we got the correct packet, we increment our header, and return the data.
+                # if we got the correct packet, we increment our header, and return an ack.
                 if self.server_compare_headers():
+
                     self.local_header.set_fin(self.remote_header.get_fin())
                     self.local_header.increment_both()
-                    pakke = self.local_header.complete_packet()
-                    self.con.sendto(pakke, (self.raddr, self.port))
+
+                    self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
                     return body
                 else:
                     # resend old ack
                     self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
 
-            except socket.timeout:
-                print("prøver igjen")
-
             except TimeoutError:
+                self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
                 print("prøver igjen")
 
         return None
