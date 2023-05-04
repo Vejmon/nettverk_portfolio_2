@@ -66,60 +66,60 @@ class A_Con:
 
     # a function used to send a establish a connection, from a client to a server.
     def send_hello(self, fil_name):
-
-        self.local_header.set_syn(True)
         # this procedure is only for the first syn_message
         # set syn flag to 1
+        self.local_header.set_syn(True)
+
         # body is a json object, carrying information about the client.
+        # fil_name is used to let the server know the name of the file to ba transferred
         body = self.grab_json(fil_name).encode()
         packet = self.create_packet(body)
 
-        print("sendt header")
-        print(self.local_header)
-
         self.con.settimeout(self.timeout)
         counter = 0
-        # attempt four times to start a connection
+        # attempt multiple times to start a connection
         while True:
+            print("\nsending hello:")
+            print(self.local_header)
+
             self.con.sendto(packet, (self.raddr, self.port))
             # wait for a response from the server
             try:
-                data, addr = self.con.recvfrom(500)
+                data, addr = self.con.recvfrom(12)
                 # break out of loop if we got anything
-                break
+                self.remote_header, body = split_packet(data)
+                if self.remote_header.get_ack() and self.remote_header.get_syn():
+                    break
             except TimeoutError:
                 counter += 1
                 print(f"didn't receive ack from server at: {self.raddr}:{self.port}")
 
-            if counter == 4:
+            if counter == 9:
                 print("couldn't establish connection, giving up")
                 sys.exit()
 
         # grab the header from the response packet
-        self.remote_header, body = split_packet(data)
-        print("mottat header")
+        print("\ngot ack from server:")
         print(self.remote_header)
 
-        # check if ack flag, and syn flag are set, from response
-        if self.remote_header.get_ack() and self.remote_header.get_syn():
-            # set only ack flag in next header.
-            self.local_header.set_flags("0100")
+        # set up response to the server.
+        # set only ack flag in next header.
+        self.local_header.set_flags("0100")
 
-            # send empty packet with the ack_flag. before transmitting data.
-            print("siste svar: sendt header")
-            print(self.local_header)
-            self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
-            # set alle flag til 0
-            self.local_header.set_flags("0000")
-        else:
-            print("Header from server has insuficient data!")
+        # send empty packet with the ack_flag. before transmitting data.
+        print("\nsiste ack fra client:")
+        print(self.local_header)
+        self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
+        # set alle flag til 0
+        self.local_header.set_flags("0000")
+
 
     # a function to respond to the first connection from a client.
     def answer_hello(self):
         # set wait timeout, set to rtt in future fix fix
         self.con.settimeout(self.timeout)
-        # check that and syn flag is set in first packet.
 
+        # check that and syn flag is set in first packet.
         if self.remote_header.get_syn():
 
             # copy sequence and nr of acked from remote header
@@ -137,41 +137,39 @@ class A_Con:
             # set empty data to silence warning
             data = b''
 
-            # attempt to transmit an answer four times.
+            # attempt to transmit an answer.
             counter = 0
             while True:
                 self.con.sendto(packet, (self.raddr, self.port))
+
                 try:
                     data, addr = self.con.recvfrom(500)
-                    if data:
-                        print("fant data")
+                    self.remote_header, body = split_packet(data)
+
+                    # if we receive a syn packet again, respond again!
+                    if self.remote_header.get_syn():
+                        print("got a syn packet, resending")
+
+                    elif self.remote_header.get_ack():
+                        print("got an ack ready to receive packets")
                         break
+
+                    elif body:
+                        print("got first packet")
+                        break
+
                 except TimeoutError:
                     print("timed out, resending")
-                counter += 1
 
-                # gir opp hvis vi har prøvd 4 ganger.
-                if counter > 3:
+                counter += 1
+                # gir opp hvis vi har prøvd mange.
+                if counter > 9:
                     print(f'unable to establish connection with {self.raddr}:{self.port}')
                     return False
 
-            # grab header from received packet
-            self.remote_header, body = split_packet(data)
-
-            print("mottat header")
             print(self.remote_header)
-
-            if self.remote_header.get_ack():
-                # increment secked and acked, and set only ack flag for future responses
-                self.local_header.set_flags("0100")
-
-                print("lokal pakke ser slik ut!")
-                print(self.local_header.__str__())
-                return True
-
-        # gir opp hvis flagg fra client ikke er satt riktig.
-        else:
-            return False
+            self.local_header.set_flags("0100")
+            return True
 
     def send_fin(self):
 
@@ -203,7 +201,8 @@ class A_Con:
     def answer_fin(self):
 
         print("sending fin_ack:\n" + self.local_header.__str__())
-        self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
+        for i in range(5):
+            self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
 
     def server_compare_headers(self):
         print("\nremote header")
@@ -212,6 +211,10 @@ class A_Con:
         print(self.local_header.__str__())
 
         # check if the packet is on the next sequence, and that the old packet has been acked.
+        if self.remote_header.get_ack():
+            print("fikk siste ack")
+            return False
+
         if self.remote_header.get_seqed() == self.local_header.get_acked() + 1:
             print("godkjent\n")
             return True
@@ -375,7 +378,7 @@ class GoBackN(A_Con):
                 largest_ack = packet.get_acked()
 
         self.list_remote_headers.clear()
-        print(f"\nbigges ack received: {largest_ack}")
+        print(f"\nbiggest ack received: {largest_ack}")
 
         # find index of item "behind" last acked packet
         index = 0
@@ -407,10 +410,13 @@ class GoBackN(A_Con):
         self.local_header.set_fin(True)
         # add empty packet to
         self.send(b'')
-        no_fin_ack = False
-        while not no_fin_ack:
-            no_fin_ack = self.recv_acks()
 
+        try:
+            data, addr = self.con.recvfrom(12)
+            header, body = split_packet(data)
+            print(f"fin_ack:\n{header}")
+        except TimeoutError:
+            print("didn't receive fin_ack:\nquitting")
 
 
     def send(self, data):
@@ -431,7 +437,9 @@ class GoBackN(A_Con):
 
         while True:
             last_list_size = len(self.list_local_headers)
-
+            # if all packets are acked, we are done with this batch
+            if not last_list_size:
+                return True
             # send all the packets in order.
             print("\nsending packets:")
             for packet in self.list_local_headers:
@@ -440,11 +448,10 @@ class GoBackN(A_Con):
             # attempt to receive acks also trims away acked, packets
             self.recv_acks()
 
-            # if all packets are acked, we are done with this batch
             if len(self.list_local_headers) == 0:
                 return True
             # if list of packets remains the same we try again
-            elif len(self.list_local_headers) == last_list_size:
+            if len(self.list_local_headers) == last_list_size:
                 attempt_counter += 1
 
             # if list is smaller than window, and we don't have the fin flag set in last item we want more packets
@@ -491,40 +498,165 @@ class SelectiveRepeat(A_Con):
     def __init__(self, laddr, raddr, port, window):
         super().__init__(laddr, raddr, port, window)
         self.window = window
-        self.list_local_packets = []
+
+        self.list_local_headers = []
         self.list_remote_acked_seqed = []
+        self.list_remote_headers = []
 
     # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
     def send_fin(self):
-
         self.local_header.set_fin(True)
-
-
         # send fin header, with a batch of packets
         self.send(b'')
 
-    def send(self, data):
 
-        print('kjør hello først')
+    def recv_acks(self):
+        self.con.settimeout(self.timeout)
+        # receive packets if we time out we stop receiving and look at what we got.
+        for packet in self.list_local_headers:
+            # receive acks from server
+            try:
+                data, addr = self.con.recvfrom(12)
+                header, body = split_packet(data)       #add the ack number to a list.
+                self.list_remote_acked_seqed.append(header.get_acked())
+
+            except TimeoutError:
+                print("dropped one or more ack packet(s)")
+                break
+
+        # remove the acked packets from list of packets to send.
+        print("\nreceived acks:")
+        for pkt in self.list_local_headers:
+            if pkt.get_seqed() in self.list_remote_acked_seqed:
+                # increment number of acked packets
+                self.local_header.increment_acked()
+                print(pkt.get_seqed())
+
+        # if the list is empty return True
+        if not len(self.list_local_headers):
+            return True
+        else:
+            return False
+
+    def send(self, data):
         # IMPORTANT
         # fin_packet is also sent in a batch of packets
         # can't use a_con's send_fin()
 
-        # recursively add packets to list of outgoing packets
-        # until list of packets is as big as window size.
+        # set seq and create a packet with data ready to be sent.
+        self.local_header.increment_seqed()
 
+        a_packet = HeaderWithBody(self.local_header.build_header(), data)
 
+        # append the packet to list of outgoing packets
+        self.list_local_headers.append(a_packet)
+
+        # if we are not sending the fin flag, and list is smaller than window we return to add more packets.
+        if not self.local_header.get_fin() and len(self.list_local_headers) < self.window:
+            return True
+
+        # attempt to send and receive acks, if no acks are present four times we give up.
+        attempt_counter = 0
+        while True:
+
+            # send all the packets in order.
+            print("\nsending packets:")
+            for packet in self.list_local_headers:
+                print(packet)
+                self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
+            # attempt to receive acks also trims away acked, packets
+            if self.recv_acks():
+                # if all packets are acked, we clear the lists, and add more packets
+                self.list_remote_acked_seqed.clear()
+                self.list_local_headers.clear()
+                return True
+
+            attempt_counter += 1
+            # if we receive no acks, we quit
+            if attempt_counter == 9:
+                return False
 
     def send_acks(self):
         # send acks for received packets
-        for pkt in self.list_local_packets:
+        for pkt in self.list_local_headers:
             self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
 
     def recv(self, chunk_size):
-        self.con.settimeout(self.timeout)
 
+
+        self.con.settimeout(self.timeout)
+        last_acked = self.local_header.get_acked()
+
+        """# build a list of expected packets
+        expected_seqed = []
+        for i in range(self.window):
+            expected_seqed.append(last_acked + (i+1))"""
+        print(self.window)
+        for i in range(self.window):
+            try:
+                data, addr = self.con.recvfrom(chunk_size)
+                header, body = split_packet(data)
+
+                # if header has seqed = 0, then it's part of the handshake
+                if header.get_seqed() not in self.list_remote_acked_seqed:
+                    self.list_remote_acked_seqed.append(header.get_seqed())
+                    # add header with body to list
+                    self.list_remote_headers.append(HeaderWithBody(header.build_header(), body))
+
+                    # add an ack to list of acks.
+                    ack_packet = Header(bytearray(12))
+                    ack_packet.set_ack(True)
+                    ack_packet.set_seqed(self.remote_header.get_seqed())
+                    ack_packet.set_acked(self.remote_header.get_seqed())
+                    self.list_local_headers.append(ack_packet)
+
+                    # respond with an ack for this spesific packet
+                    self.con.sendto(ack_packet.build_header(), (self.raddr, self.port))
+
+                    print("\nreceived packets:")
+                    for pkt in self.list_remote_headers:
+                        print(pkt)
+
+            except TimeoutError:
+                print("dropped a packet")
+                print("responding with ack packets")
+                for pkt in self.list_local_headers:
+                    self.con.sendto(pkt.build_header(), (self.raddr, self.port))
+
+            # sort the list of remote headers with by seqed and in increasing order
+            sorted(self.list_remote_headers, key=lambda Header: Header.seqed)
+
+            # if we got a full list, we stop to respond with some acks.
+
+            # if we got a full window we send ack for all, and move on to next window.
+            # or a not full window, but we got every step, and last step has a fin flag.
+            every_step = True
+            found_fin = False
+            for i in range(len(self.list_remote_headers)):
+                if self.list_remote_headers[i].get_fin():
+                    found_fin = True
+
+                if self.list_remote_headers[i].get_seqed() != (last_acked + i):
+                    every_step = False
+
+            if every_step and len(self.list_remote_headers) == self.window:
+                total_bytes = b''
+                for pkt in self.list_remote_headers:
+                    total_bytes += pkt.body
+                return total_bytes
+
+            if every_step and found_fin:
+                self.remote_header.set_fin(True)
+                total_bytes = b''
+                for pkt in self.list_remote_headers:
+                    total_bytes += pkt.body
+                return total_bytes
+
+        # grab largest seq
+        self.local_header.set_acked(max(self.list_remote_headers, key=lambda Header: Header.seqed))
+        # receive packets while list of packets are smaller than window
 
 
 class Header:

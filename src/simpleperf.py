@@ -131,9 +131,8 @@ def get_args():
     parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open")
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
                        help="ipv4 adress to bind server to, default binds to local address")
-    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'neteem', 'skipseq'], default="norm",
-                       help="run tests on a server, loss drops some packets, skipack skips acking some packets,"
-                            "neteem implements tc-netem")
+    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'skipseq'], default="norm",
+                       help="run tests on a server, loss drops some packets, skipack skips acking some packets")
 
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
@@ -146,9 +145,6 @@ def get_args():
     parse.add_argument('-w', '--window', type=valid_window, default=5,
                        help='window size used for reliable transfer, when using "go back n" or "selective repeat"'
                             'window size must be a positive integer')
-    parse.add_argument('-R', '--RTT', type=valid_rtt, default=0.05,
-                       help='set round-trip-time for the client connection in ms, may be a float.'
-                            'RTT must be a positive float.')
 
     # parse the arguments
     return parse.parse_args()
@@ -237,7 +233,7 @@ def server():
             else:
                 # quit if something unforeseen has happened
                 print("client information insuficient, exiting")
-                sys.exit()
+                break
 
             # hands over the received header from the connected client
             remote_client.remote_header = header
@@ -245,7 +241,7 @@ def server():
             # hands the socket over, for future transfers.
             remote_client.set_con(serv_sock)
 
-            print("mottat header")
+            print("\nmottat header")
             print(remote_client.remote_header)
 
             # start over if the remote client doesn't respond to our answer
@@ -274,13 +270,13 @@ def server():
                 # if we received a fin flag, we say goodbye
                 if remote_client.remote_header.get_fin():
                     remote_client.answer_fin()
+                    print(f"saving file at\n{unik_fil}")
 
                 # we can infer that the transfer failed if we never got a fin flag,
                 # in that case we remove the half transfered file.
                 else:
                     print("removing failed file")
                     os.remove(path)
-
 
         # restarts server after an error ocurs
         time.sleep(3)
