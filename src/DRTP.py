@@ -542,6 +542,19 @@ class SelectiveRepeat(A_Con):
             return False
 
     def send(self, data):
+
+        #1. checks the next available sequence number for the packet
+        # if the seq number is within the sender's window, the packet is sent
+
+        # 2. each packet has its own timer, since only a single packet will be transmitted on timeout
+
+        # 3. if an ACK is received, the sender marks the packet as received, provided its in the window
+        #       if the seq number is equal to send_base,
+        #       the window base is moved forward to the unacknowledged packet with the smallest seq number
+        #           if the window moves and there are untransmitted packets with seq numbers that now falls within the window,
+        #           these packets are now transmitted
+
+
         # IMPORTANT
         # fin_packet is also sent in a batch of packets
         # can't use a_con's send_fin()
@@ -586,6 +599,13 @@ class SelectiveRepeat(A_Con):
 
     def recv(self, chunk_size):
 
+        # 1. packet with sequence number in rcv_base - rcv_base+N+1 is correctly received
+        #    the received packet falls within the receiver's window and an ACK is returned to the sender
+        #       if this packet has a seq number equal to the base of the receive window,
+        #       the window is moved forward by the number of packets delivered to the upper layer
+        # 2. packets with seq number in rcv_base-N - rcv_base-1 is correctly received
+        #   send an ACK even though this is a packet that the receiver has previously acknowledged
+        # 3. Otherwise: ignore the packet
 
         self.con.settimeout(self.timeout)
         last_acked = self.local_header.get_acked()
