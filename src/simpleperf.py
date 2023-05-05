@@ -160,17 +160,22 @@ if not (args.server ^ args.client):
 def client():
     # sets method for reliable transfer.
     if args.reli == "gbn":
-        method = DRTP.GoBackN(args.bind, args.serverip, args.port, args.window)
+        method = DRTP.GoBackN(args.bind, args.serverip,
+                              args.port, args.window, args.test)
     elif args.reli == 'sr':
-        method = DRTP.SelectiveRepeat(args.bind, args.serverip, args.port, args.window)
+        method = DRTP.SelectiveRepeat(args.bind, args.serverip,
+                                      args.port, args.window, args.test)
     else:
-        method = DRTP.StopWait(args.bind, args.serverip, args.port, 1)
+        method = DRTP.StopWait(args.bind, args.serverip,
+                               args.port, 1, args.test)
     # binds UDP connection to local ipv4 address and port.
     method.bind_con()
 
     # let server know we are trying to connect,
     # the argument send is the filename we are going to attempt to transmit
     method.send_hello(args.file.split('/')[-1])
+
+    print(f"test navn: {method.test}")
 
     # sender pakker så lenge det fins deler å lese og forige sending gikk bra
     send_succesfull = True
@@ -225,11 +230,14 @@ def server():
             # create a server version of the client attempting to connect,
             # we grab the -r and -f flag from the client. (reliable method and filename)
             if en_client['typ'] == 'GoBackN':
-                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port, en_client['window'])
+                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'],
+                                             args.port, en_client['window'], en_client['test'])
             elif en_client['typ'] == 'StopWait':
-                remote_client = DRTP.StopWait(args.bind, en_client['laddr'], args.port, 1)
+                remote_client = DRTP.StopWait(args.bind, en_client['laddr'],
+                                              args.port, 1, en_client['test'])
             elif en_client['typ'] == 'SelectiveRepeat':
-                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'], args.port, en_client['window'])
+                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'],
+                                                     args.port, en_client['window'],en_client['test'])
             else:
                 # quit if something unforeseen has happened
                 print("client information insuficient, exiting")
@@ -241,8 +249,12 @@ def server():
             # hands the socket over, for future transfers.
             remote_client.set_con(serv_sock)
 
+            print(f"test navn: {remote_client.test}")
+
             print("\nmottat header")
             print(remote_client.remote_header)
+
+
 
             # start over if the remote client doesn't respond to our answer
             if remote_client.answer_hello():
