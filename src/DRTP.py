@@ -531,7 +531,7 @@ class SelectiveRepeat(A_Con):
         # fin_packet is also sent in a batch of packets
         # can't use a_con's send_fin()
 
-        send_base = self.local_header.acked() + 1
+        send_base = self.local_header.get_acked() + 1
         send_baseN = send_base + self.window
 
         # set seq and create a packet with data ready to be sent.
