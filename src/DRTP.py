@@ -583,8 +583,7 @@ class SelectiveRepeat(A_Con):
             # attempt to receive acks also trims away acked, packets
             if self.recv_acks():
                 # if all packets are acked, we clear the lists, and add more packets
-                self.list_remote_acked_seqed.clear()
-                self.list_local_headers.clear()
+
                 return True
 
             attempt_counter += 1
@@ -636,9 +635,7 @@ class SelectiveRepeat(A_Con):
                     # respond with an ack for this spesific packet
                     self.con.sendto(ack_packet.build_header(), (self.raddr, self.port))
 
-                    print("\nreceived packets:")
-                    for pkt in self.list_remote_headers:
-                        print(pkt)
+                    print(f"sending ack:\n{ack_packet}")
 
             except TimeoutError:
                 print("dropped a packet")
