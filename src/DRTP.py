@@ -532,7 +532,8 @@ class SelectiveRepeat(A_Con):
             if pkt.get_seqed() in self.list_remote_acked_seqed:
                 # increment number of acked packets
                 self.local_header.increment_acked()
-                print(pkt.get_seqed())
+                # remove packet from list
+                self.list_local_headers.remove(pkt)
 
         # if the list is empty return True
         if not len(self.list_local_headers):
@@ -600,7 +601,7 @@ class SelectiveRepeat(A_Con):
                 header, body = split_packet(data)
 
                 # if header has seqed = 0, then it's part of the handshake
-                if header.get_seqed() not in self.list_remote_acked_seqed:
+                if header.get_seqed() and not header.get_seqed() in self.list_remote_acked_seqed:
                     self.list_remote_acked_seqed.append(header.get_seqed())
                     # add header with body to list
                     self.list_remote_headers.append(HeaderWithBody(header.build_header(), body))
@@ -608,8 +609,8 @@ class SelectiveRepeat(A_Con):
                     # add an ack to list of acks.
                     ack_packet = Header(bytearray(12))
                     ack_packet.set_ack(True)
-                    ack_packet.set_seqed(self.remote_header.get_seqed())
-                    ack_packet.set_acked(self.remote_header.get_seqed())
+                    ack_packet.set_seqed(header.get_seqed())
+                    ack_packet.set_acked(header.get_seqed())
                     self.list_local_headers.append(ack_packet)
 
                     # respond with an ack for this spesific packet
