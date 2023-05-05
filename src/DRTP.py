@@ -514,7 +514,7 @@ class SelectiveRepeat(A_Con):
 
 
     def send(self, data):
-
+        # Sender's actions in Selective Repeat
         #1. checks the next available sequence number for the packet
         # if the seq number is within the sender's window, the packet is sent
 
@@ -620,7 +620,7 @@ class SelectiveRepeat(A_Con):
 
 
     def recv(self, chunk_size):
-
+        # Receivers actions in Selective Repeat
         # 1. packet with sequence number in rcv_base - rcv_base+N+1 is correctly received
         #    the received packet falls within the receiver's window and an ACK is returned to the sender
         #       if this packet has a seq number equal to the base of the receive window,
