@@ -2,10 +2,8 @@ import socket
 import sys
 import time
 from struct import *
-# eh
 # header format is always the same, so a variable is here for convenience
 header_format = '!IIHH'
-
 
 def split_packet(data):
     header_data = data[:12]
@@ -642,23 +640,35 @@ class SelectiveRepeat(A_Con):
                 data, addr = self.con.recvfrom(chunk_size)
                 header, body = split_packet(data)
 
+                print(f"\ngot packet:\n{header}")
+
                 # If seq = base, the window moves
                 if header.get_seqed() == rcv_base:
 
                     header.set_acked(header.get_seqed())
                     # ack the packet
+                    print(f"\nsending ack:\n{header}")
                     self.con.sendto(header.build_header(), (self.raddr, self.port))
                     self.local_header.increment_acked()
 
-                    # sort list of received packets in ascending order.
+                    # add ack to list of acked packets
+                    self.list_acked.append(header.get_acked())
+
+                    # sort list of received packets in ascending order. and list of acks
                     sorted(self.list_remote_headers, key=lambda Header: Header.get_seqed())
+                    self.list_acked.sort()
+
                     # find last full step in list of received packets
                     index_siste_pakke = 0
-                    for i in range(len(self.list_remote_headers)):
-                        if self.list_remote_headers[i].get_seqed() == i + rcv_base:
+
+                    for i in range(len(self.list_acked)):
+                        print(self.list_acked[i])
+                        if self.list_acked[i] == i + rcv_base + 1:
                             index_siste_pakke = i
                         else:
                             break
+
+                    print(f"window starts at: {index_siste_pakke}, and ends at: {index_siste_pakke + self.window}")
 
                     # add body from packet and remove the packets
                     for i in range(index_siste_pakke):
@@ -667,6 +677,7 @@ class SelectiveRepeat(A_Con):
                         body += self.list_remote_headers[i].body
                         self.list_remote_headers.pop(i)
                     return body
+
 
                 # seq number is within the window
                 elif rcv_base < header.get_seqed() <= rcv_baseN:

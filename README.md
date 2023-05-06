@@ -23,7 +23,7 @@ When a client connects, it will advertise the following to the server:
     the window size for the connection,
     the method for reliable transfer,
     the name of the file to be transfered,
-    the test to be ran,
+    the artificial test to be run on either server or client.
     
 
 the client version of the program decides what image to transfer with the '-f, --file flag'
@@ -32,7 +32,7 @@ Lastly the test to be ran on either the client or the server may be decided when
 By default the client attempts to connect with node h3 if not otherwise specified.
 the client can be invoked as follows:
 
-    $ python3 simpleperf.py -c
-    $ python3 simpleperf.py -c -I <server_ip> -t <test_name> -f <file_in_img> -p <port> -r <method>
+    $ python3 simpleperf.py -c  <starts a connection to h3 and transmitt kameleon.jpg, with stop wait>
+    $ python3 simpleperf.py -c -I <server_ip> -t <test_name> -f <file_in_img> -p <port> -r <method> -w <window_size>
 
 we've attempted to build the DRTP protocol so that the usage in simpleperf is closely mimicking a TCP socket.
