@@ -1,6 +1,7 @@
 import socket
 import sys
 import time
+import threading as th
 from struct import *
 # header format is always the same, so a variable is here for convenience
 header_format = '!IIHH'
@@ -510,6 +511,18 @@ class SelectiveRepeat(A_Con):
         # send fin header, with a batch of packets
         self.send(b'')
 
+    def send_packet(self, pkt):
+        # sends a packet, then sleeps and checks if an ack is received, if not we resend the packet
+        for i in range(7):
+            self.con.sendto(pkt.build_header(), (self.raddr, self.port))
+            time.sleep(self.timeout)
+
+            if pkt.get_seqed() in self.list_acked:
+                print(f"found ack for pkt:\n{pkt}")
+                return
+            else:
+                print(f"ack for packet \n{pkt}\nnot received, resending")
+
 
     def send(self, data):
         # Sender's actions in Selective Repeat
@@ -525,10 +538,6 @@ class SelectiveRepeat(A_Con):
         #           these packets are now transmitted
 
 
-        # IMPORTANT
-        # fin_packet is also sent in a batch of packets
-        # can't use a_con's send_fin()
-
         send_base = self.local_header.get_acked() + 1
         send_baseN = send_base + self.window
 
@@ -543,10 +552,12 @@ class SelectiveRepeat(A_Con):
         if not self.local_header.get_fin() and len(self.list_local_headers) < self.window:
             return True
 
+        print("sending packets")
         # send all the packets
         for pkt in self.list_local_headers:
-            self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
-
+            print(pkt)
+            # starts a thread which sends the packet for every timeout as long as no ack has been received.
+            th.Thread(target=self.send_packet, args=(pkt,),  daemon=True).start()
 
         # hvis vi får en ACK sjekk om det er i vindu, hvis det er i vindu -> legg til i lista
         #   hvis ACK ikke i vindu -> ikke registrer
@@ -554,6 +565,7 @@ class SelectiveRepeat(A_Con):
         #   hvis det er lik, flytt vinduet til neste pakke som ikke har fått ACK
         #       hvis vi flytter vinduet -> send nye pakker
         while True:
+        # jobb med å fjerne acked pakker fra self.list_local_headers
             try:
                 data, addr = self.con.recvfrom(12)
                 header, body = split_packet(data)
@@ -563,61 +575,38 @@ class SelectiveRepeat(A_Con):
 
                 # sjekk om ACK number er lik send_base
                 if header.get_acked() == send_base:
-                    print("fikk første ack")
-                    # gå gjennom list_acked, sett send_base til den første som ikke er ACKed
-                    # Sorterer i stigende rekkefølge, går gjennom og sjekker hvis den man er på ikke er lik
+                    print("got first ack in window")
+
                     self.list_acked.sort()
-                    # index of base in list of acked:
-                    index = self.list_acked.index(send_base)
+                    index_last_non_acked = 0
+                    acked = 0
+                    for pkt in self.list_local_headers:
+                        if pkt.get_acked() not in self.list_acked:
+                            index_last_non_acked = self.list_local_headers.index(pkt)
+                            break
+                            # update local header so that a new base is set.
+                        self.local_header.set_acked(pkt.get_acked())
+                    # index last non acked is now the new base at next run.
 
-                    for i in range(index, len(self.list_acked) -1):
-                        if not self.list_acked[i] == send_base + 1:
-                            print("Vil flytte vindu")
-                            # gjør noe
+                    for i in range(index_last_non_acked):
+                        # remove headers which have been acked.
+                        self.list_local_headers.pop(i)
 
-
-                    #for i in self.list_acked:
-                        #if i+1 != self.list_acked[i+1]:
-                            #flytt vinduet til neste pakke som ikke har fått ACK
-                            #send_base=self.list_acked[i+1]
-                            #send nye pakker
-
-
-                            #korleis sjekke den første i lista?
-
-
-                    # [1, 2, 4, 5]
-                    j = 1
-                    for i in self.list_acked:
-                        if i == j:
-                            j += 1
-                        else:
-                            # Pakken har ikke fått ACK, flytter vindu
-                            send_base = i
-                            send_baseN = send_base + self.window
-                            # Send nye pakker i vinduet
-
-
-
-
-                    # sjekk hvor mange andre acker vi har fått
-                    # returner for flere pakker
-
-
+                    # return for more packets
+                    return True
 
                 #sjekk om acked er i vinduet
                 elif send_base < header.get_acked() <= send_baseN:
-                    # legg til i lista
-                    print("ack er i vindu")
-
+                    if header.get_acked() not in self.list_acked:
+                        self.list_acked.append(header.get_acked())
 
             except TimeoutError:
+                print(self.list_acked)
                 print("Timeout")
 
-
-
-
     def recv(self, chunk_size):
+
+
         # Receivers actions in Selective Repeat
         # 1. packet with sequence number in rcv_base - rcv_base+N+1 is correctly received
         #    the received packet falls within the receiver's window and an ACK is returned to the sender
@@ -633,58 +622,56 @@ class SelectiveRepeat(A_Con):
         #end of the window
         rcv_baseN = rcv_base + self.window
 
-        self.con.settimeout(None)
+        # set an arbitrary long timeout
+        self.con.settimeout(12)
 
         while True:
             try:
                 data, addr = self.con.recvfrom(chunk_size)
-                header, body = split_packet(data)
-
+                inn_header, body = split_packet(data)
+                header = HeaderWithBody(inn_header.build_header(), body)
                 print(f"\ngot packet:\n{header}")
-
                 # If seq = base, the window moves
                 if header.get_seqed() == rcv_base:
-
+                    print("got first packet in window")
+                    # set nr acked and ack flag
                     header.set_acked(header.get_seqed())
-                    # ack the packet
+                    header.set_ack(True)
+
                     print(f"\nsending ack:\n{header}")
                     self.con.sendto(header.build_header(), (self.raddr, self.port))
-                    self.local_header.increment_acked()
+                    self.local_header.set_acked(header.get_seqed())
 
                     # add ack to list of acked packets
-                    self.list_acked.append(header.get_acked())
+                    if header.get_acked() not in self.list_acked:
+                        self.list_acked.append(header.get_acked())
+                        self.list_remote_headers.append(header)
 
                     # sort list of received packets in ascending order. and list of acks
                     sorted(self.list_remote_headers, key=lambda Header: Header.get_seqed())
                     self.list_acked.sort()
 
+                    print("headers i listene")
+                    for i in range(len(self.list_remote_headers)):
+                        print(f"list_acked: {self.list_acked[i]}\nlist_remote_headers:{self.list_remote_headers[i]}")
+
                     # find last full step in list of received packets
-                    index_siste_pakke = 0
+                    # if there are any items in the list, we find the smallest one.
+                    smalest_header = HeaderWithBody(bytearray(12), None)
+                    if self.list_remote_headers:
+                        smalest_header = min(self.list_remote_headers, key=lambda HeaderWithBody: HeaderWithBody.get_seqed())
 
-                    for i in range(len(self.list_acked)):
-                        print(self.list_acked[i])
-                        if self.list_acked[i] == i + rcv_base + 1:
-                            index_siste_pakke = i
-                        else:
-                            break
+                    print(f"smallest header:\n{smalest_header}")
 
-                    print(f"window starts at: {index_siste_pakke}, and ends at: {index_siste_pakke + self.window}")
-
-                    # add body from packet and remove the packets
-                    for i in range(index_siste_pakke):
-
-                        self.local_header.increment_acked()
-                        body += self.list_remote_headers[i].body
-                        self.list_remote_headers.pop(i)
-                    return body
-
-
-                # seq number is within the window
+                    # seq number is within the window
                 elif rcv_base < header.get_seqed() <= rcv_baseN:
                     # ACK is returned to the sender
-                    self.list_remote_headers.append(header)
                     header.set_acked(header.get_seqed())
                     self.con.sendto(header.build_header(), (self.raddr, self.port))
+                    # header is added to list of acked, and packet is added to
+                    if header.get_acked() not in self.list_acked:
+                        self.list_acked.append(header.get_acked())
+                        self.list_remote_headers.append(header)
 
 
                 # seq number between rcv_base-N and rcv_base-1 is received
