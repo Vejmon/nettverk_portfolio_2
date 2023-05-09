@@ -499,6 +499,7 @@ class SelectiveRepeat(A_Con):
         super().__init__(laddr, raddr, port, window, test)
         self.window = window
 
+        self.list_sending_threads = []
         self.list_local_headers = []
         self.list_acked = []
         self.list_remote_headers = []
@@ -514,14 +515,14 @@ class SelectiveRepeat(A_Con):
     def send_packet(self, pkt):
         # sends a packet, then sleeps and checks if an ack is received, if not we resend the packet
         for i in range(7):
+            print(f"\nsending packet{pkt}")
             self.con.sendto(pkt.build_header(), (self.raddr, self.port))
             time.sleep(self.timeout)
-
             if pkt.get_seqed() in self.list_acked:
-                print(f"found ack for pkt:\n{pkt}")
+                print(f"\nfound ack for pkt:\n{pkt}")
                 return
             else:
-                print(f"ack for packet \n{pkt}\nnot received, resending")
+                print(f"\nack for packet not received, resending \n{pkt}")
 
 
     def send(self, data):
@@ -538,7 +539,15 @@ class SelectiveRepeat(A_Con):
         #           these packets are now transmitted
 
 
-        send_base = self.local_header.get_acked() + 1
+        last_nr_in_sequence = 0
+        self.list_acked.sort()
+        for i in range(len(self.list_acked)):
+            if i + 1 == self.list_acked[i]:
+                last_nr_in_sequence = i + 1
+            else:
+                break
+
+        send_base = last_nr_in_sequence + 1
         send_baseN = send_base + self.window
 
         # set seq and create a packet with data ready to be sent.
@@ -549,15 +558,17 @@ class SelectiveRepeat(A_Con):
         self.list_local_headers.append(a_packet)
 
         # if we are not sending the fin flag, and list is smaller than window we return to add more packets.
-        if not self.local_header.get_fin() and len(self.list_local_headers) < self.window:
+        if not self.local_header.get_fin() and send_base <= a_packet.get_seqed() < send_baseN - 1:
             return True
 
-        print("sending packets")
+        print(f"sending packets: base:{send_base} baseN:{send_baseN}\nlist of acks:{self.list_acked}")
         # send all the packets
+
         for pkt in self.list_local_headers:
-            print(pkt)
-            # starts a thread which sends the packet for every timeout as long as no ack has been received.
-            th.Thread(target=self.send_packet, args=(pkt,),  daemon=True).start()
+            if pkt.get_seqed() not in self.list_sending_threads:
+                t = th.Thread(target=self.send_packet, args=(pkt,),  daemon=True).start()
+                self.list_sending_threads.append(pkt.get_seqed())
+
 
         # hvis vi får en ACK sjekk om det er i vindu, hvis det er i vindu -> legg til i lista
         #   hvis ACK ikke i vindu -> ikke registrer
@@ -571,27 +582,21 @@ class SelectiveRepeat(A_Con):
                 header, body = split_packet(data)
 
                 if header.get_acked() not in self.list_acked:
+                    self.local_header.increment_acked()
                     self.list_acked.append(header.get_acked())
+
+                # ta ut pakker som er blitt acked av server
+                self.list_acked.sort()
+                for pkt in self.list_local_headers:
+                    if pkt.get_seqed() in self.list_acked:
+                        self.list_local_headers.remove(pkt)
+                        # update local header so that a new base is set.
+
+                # index last non acked is now the new base at next run.
 
                 # sjekk om ACK number er lik send_base
                 if header.get_acked() == send_base:
                     print("got first ack in window")
-
-                    self.list_acked.sort()
-                    index_last_non_acked = 0
-                    acked = 0
-                    for pkt in self.list_local_headers:
-                        if pkt.get_acked() not in self.list_acked:
-                            index_last_non_acked = self.list_local_headers.index(pkt)
-                            break
-                            # update local header so that a new base is set.
-                        self.local_header.set_acked(pkt.get_acked())
-                    # index last non acked is now the new base at next run.
-
-                    for i in range(index_last_non_acked):
-                        # remove headers which have been acked.
-                        self.list_local_headers.pop(i)
-
                     # return for more packets
                     return True
 
@@ -601,8 +606,9 @@ class SelectiveRepeat(A_Con):
                         self.list_acked.append(header.get_acked())
 
             except TimeoutError:
-                print(self.list_acked)
-                print("Timeout")
+                # return for more packets
+                if len(self.list_local_headers) < self.window and not self.local_header.get_fin():
+                    return True
 
     def recv(self, chunk_size):
 
@@ -686,7 +692,7 @@ class SelectiveRepeat(A_Con):
                     # ignore the packet
                     print(f"seqnr is too high{header}")
 
-            except:
+            except:   # har du trua Sunniva?
                 return False
 
 
