@@ -519,7 +519,6 @@ class SelectiveRepeat(A_Con):
             self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
             time.sleep(self.timeout)
             if pkt.get_seqed() in self.list_acked:
-                print(f"\nfound ack for pkt:\n{pkt}")
                 return
             else:
                 print(f"\nack for packet not received, resending \n{pkt}")
@@ -569,7 +568,6 @@ class SelectiveRepeat(A_Con):
                 t = th.Thread(target=self.send_packet, args=(pkt,),  daemon=True).start()
                 self.list_sending_threads.append(pkt.get_seqed())
 
-
         # hvis vi får en ACK sjekk om det er i vindu, hvis det er i vindu -> legg til i lista
         #   hvis ACK ikke i vindu -> ikke registrer
         # sjekk om ACK number er lik send_base
@@ -580,6 +578,8 @@ class SelectiveRepeat(A_Con):
             try:
                 data, addr = self.con.recvfrom(12)
                 header, body = split_packet(data)
+
+                print(f"\ngot an ack:\n{header}")
 
                 if header.get_acked() not in self.list_acked:
                     self.local_header.increment_acked()
@@ -607,7 +607,7 @@ class SelectiveRepeat(A_Con):
 
             except TimeoutError:
                 # return for more packets
-                if len(self.list_local_headers) < self.window and not self.local_header.get_fin():
+                if not self.local_header.get_fin():
                     return True
 
     def recv(self, chunk_size):
@@ -673,22 +673,24 @@ class SelectiveRepeat(A_Con):
 
                 # If seq = base, the window moves
                 if header.get_seqed() == rcv_base:
-                    print("got first packet in window")
+                    print("got first packet in window\nreturning bytes and moving window")
 
                     # sort list of received packets in ascending order. and list of acks
-                    sorted(self.list_remote_headers, key=lambda Header: Header.get_seqed())
+                    self.list_remote_headers.sort(key=HeaderWithBody.get_seqed)
                     self.list_acked.sort()
 
-
+                    for pkt in self.list_remote_headers:
+                        print(pkt)
+                    print(self.list_acked)
 
                     # move window beyond last packet in sequence
                     last_nr_in_sequence = rcv_base
-                    return_body = b''
+                    total_body = b''
                     counter = 0
                     for pkt in self.list_remote_headers:
                         if pkt.get_seqed() == rcv_base + counter:
                             if body:
-                                return_body += pkt.body
+                                total_body += pkt.body
                             self.local_header.set_fin(pkt.get_fin())
                             self.remote_header.set_fin(pkt.get_fin())
                             self.local_header.set_acked(pkt.get_seqed())
@@ -698,9 +700,9 @@ class SelectiveRepeat(A_Con):
 
                     # remove items in list which are returned
                     del self.list_remote_headers[:counter]
-                    print(f"remote headers{self.list_remote_headers}")
-                    # return the packets
-                    return return_body
+
+                    # return payload and get more packets
+                    return total_body
 
                 # seq number between rcv_base-N and rcv_base-1 is received
 
