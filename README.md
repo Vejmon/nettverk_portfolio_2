@@ -1,7 +1,7 @@
 This project consist of two programs, a modified version of simpleperf using UDP,
 and a protocol called DRTP used to reliably transmit the packages.
 
-A client transmits an image the 'img' folder.
+A client transmits an image from the 'img' folder.
 Then a copy of the image is stored at the server in a folder called 'ut'.
 
 the server transmits the image kameleon.jpg in the img folder by default.
@@ -36,3 +36,8 @@ the client can be invoked as follows:
     $ python3 simpleperf.py -c -I <server_ip> -t <test_name> -f <file_in_img> -p <port> -r <method> -w <window_size>
 
 we've attempted to build the DRTP protocol so that the usage in simpleperf is closely mimicking a TCP socket.
+There is also a help page in the program, if run as follows:
+
+    $ python3 simpleperf.py -h
+
+Will print a message to screen about what inputs are allowed and how they work. 

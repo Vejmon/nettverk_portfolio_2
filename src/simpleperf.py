@@ -78,7 +78,7 @@ def valid_port(inn):
     return ut
 
 
-# attempts to grab a specified file.
+# checks if the specified file is in the filesystem.
 def valid_file(name):
     absolute = os.path.abspath(os.path.dirname(__file__))
     path = absolute + f"/../img/{name}"
@@ -89,7 +89,9 @@ def valid_file(name):
         sys.exit(1)
 
 
-# modifisert denne noe:
+# used to get a new name to save incoming file to in the ut folder,
+# example kameleon.jpg already exists, we increment to kameleon_1.jpg
+# looked at how to perform this task on this site:
 # https://stackoverflow.com/questions/13852700/create-file-but-if-name-exists-add-number
 def get_save_file(path):
     file = path.split('/')[-1]
@@ -104,6 +106,7 @@ def get_save_file(path):
 
 
 # parse arguments the user may input when running the skript, some are required in a sense, others are optional
+# the "help" message may be accessed by invoking the program with the -h flag
 def get_args():
     # start the argument parser
     parse = argparse.ArgumentParser(prog="FileTransfer",
@@ -114,9 +117,9 @@ def get_args():
     # optional arguments, with long and short name, default values when needed, info for the help page
     parse.add_argument('-s', '--server', action='store_true', help='enables server mode')
     parse.add_argument('-c', '--client', action='store_true', help='enables client mode')
-    parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open")
+    parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open, default is 8088")
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
-                       help="ipv4 adress to bind server to, default binds to local address")
+                       help="ipv4 adress to bind server to, default attempts to bind to local address")
     parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'skipseq', 'reorder'], default="norm",
                        help="run tests on a server or client, loss drops some packets, "
                             "\nskipack skips acking some packets, skipseq skips a sequence nr. "
@@ -138,6 +141,7 @@ def get_args():
     return parse.parse_args()
 
 
+# grab arguments from user
 args = get_args()
 
 # an instance of simpleperf may only be server or client, this functions as a xor operator
@@ -145,6 +149,10 @@ if not (args.server ^ args.client):
     raise AttributeError("you must run either in server or client mode")
 
 
+# starts a client version of the program, and sets up the DRTP in the requested reliable transfer method.
+# also breaks the file into bytes to create packets from, and transfers those bytes as long as there are more to send
+# first we must use send_hello to establish a connection and send information about our client.
+# then after transferring the file we say goodbye.
 def client():
     # sets method for reliable transfer.
     if args.reli == "gbn":
@@ -160,22 +168,24 @@ def client():
     method.bind_con()
 
     # let server know we are trying to connect,
-    # the argument send is the filename we are going to attempt to transmit
+    # the argument in send_hello is the filename we are going to attempt to transmit
     method.send_hello(args.file.split('/')[-1])
 
     print(f"test navn: {method.test}")
 
     # sender pakker så lenge det fins deler å lese og forige sending gikk bra
-    send_succesfull = True
+    # 'rb' is read, bytes so the file is opened and read as bytes, we read 1460 bytes at a time,
+    # unless there aren't enough bytes left
     with open(args.file, 'rb') as fil:
+        # if last sending wasn't succesfull we quit.
+        send_succesfull = True
         chunk = fil.read(1460)
         # create first packet so that we don't send an extra empty packet.
-
         while chunk and send_succesfull:
             send_succesfull = method.send(chunk)
             chunk = fil.read(1460)
 
-    # if we got this far, we send a last packet with the fin flag.
+    # if we got this far and transfering bytes was a success, we send a last packet with the fin flag.
     if send_succesfull:
         method.send_fin()
     else:
@@ -183,6 +193,7 @@ def client():
         sys.exit(1)
 
 
+#
 def server():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as serv_sock:
         serv_sock.bind((args.bind, args.port))
