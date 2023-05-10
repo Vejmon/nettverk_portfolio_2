@@ -4,12 +4,11 @@ import sys
 import argparse
 import socket
 import os
-import threading as th
 import ipaddress
 import time
 import json
-import math
 import DRTP
+
 
 # a function to run ifconfig on a node and grab the first ipv4 address we find.
 # which makes sense to set as default address when running in server mode.
@@ -34,7 +33,7 @@ def get_ip():
         return "10.0.1.2"
 
 
-# function to validate the ip address given as an argument, validatet with a regex pattern and the ipaddress library.
+# function to validate the ip address given as an argument, validated with a regex pattern and the ipaddress library.
 # if we don't have a valid ip address we terminate the program, and print a fault
 def valid_ip(inn):  # ip address must start with 1-3 digits seperated by a dot, repeated three more times.
     # I've decided to use an incomplete regex, "257.0.0.0" for example isn't an ip address but this regex allows them.
@@ -51,18 +50,6 @@ def valid_ip(inn):  # ip address must start with 1-3 digits seperated by a dot, 
         sys.exit(1)
         # ipaddress returns an IPv4Address object, we cast it to string our use
     return str(ip)
-
-
-def valid_rtt(inn):
-    # if the input isn't a float, we complain and quit
-    try:
-        ut = float(inn)
-    except TypeError:
-        raise argparse.ArgumentTypeError(f"RTT must be a float, {inn} isn't")
-    # if the input isn't within range, we complain and quit
-    if not (1 <= ut):
-        raise argparse.ArgumentTypeError(f'RTT: ({inn}) must be a positive float')
-    return ut
 
 
 # check if the argument deciding window size is valid.
@@ -93,8 +80,8 @@ def valid_port(inn):
 
 # attempts to grab a specified file.
 def valid_file(name):
-    abs = os.path.abspath(os.path.dirname(__file__))
-    path = abs + f"/../img/{name}"
+    absolute = os.path.abspath(os.path.dirname(__file__))
+    path = absolute + f"/../img/{name}"
     if os.path.isfile(path):
         return path
     else:
@@ -130,8 +117,10 @@ def get_args():
     parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open")
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
                        help="ipv4 adress to bind server to, default binds to local address")
-    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'skipseq'], default="norm",
-                       help="run tests on a server, loss drops some packets, skipack skips acking some packets")
+    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'skipseq', 'reorder'], default="norm",
+                       help="run tests on a server or client, loss drops some packets, "
+                            "\nskipack skips acking some packets, skipseq skips a sequence nr. "
+                            "\nReorder reorders the packets in a window only works with gbn and sr")
 
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
@@ -151,7 +140,7 @@ def get_args():
 
 args = get_args()
 
-# an instance of simpleperf may only be server or client, this functions as an xor operator
+# an instance of simpleperf may only be server or client, this functions as a xor operator
 if not (args.server ^ args.client):
     raise AttributeError("you must run either in server or client mode")
 
@@ -205,6 +194,8 @@ def server():
             # recieve first syn from client
             try:
                 data, addr = serv_sock.recvfrom(500)
+                # grab the time we received a packet
+                time_received = time.time()
                 header, body = DRTP.split_packet(data)
 
                 # if header doesn't have syn flag, it's an old packet,
@@ -248,7 +239,7 @@ def server():
                                               args.port, 1, en_client['test'])
             elif en_client['typ'] == 'SelectiveRepeat':
                 remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'],
-                                                     args.port, en_client['window'],en_client['test'])
+                                                     args.port, en_client['window'], en_client['test'])
             else:
                 # quit if something unforeseen has happened
                 print("client information insuficient, exiting")
@@ -265,17 +256,19 @@ def server():
             print("\nmottat header")
             print(remote_client.remote_header)
 
-
-
             # start over if the remote client doesn't respond to our answer
             if remote_client.answer_hello():
+
+                # sets timeout to four times the RTT
+                remote_client.timeout = (time.time() - time_received) * 4
+                print(f"setting timeout to: {remote_client.timeout}")
                 # lager en fil fil i ut mappen
                 # hvis filen fins, inkrementerer med 1
                 filnavn = en_client['fil']
-                abs = os.path.abspath(os.path.dirname(__file__))
+                absolute = os.path.abspath(os.path.dirname(__file__))
                 # hopper ut av src mappen
-                abs = abs[:-4]
-                path = abs + f"/ut/{filnavn}"
+                absolute = absolute[:-4]
+                path = absolute + f"/ut/{filnavn}"
                 # ser om filen allerede fins, lager nytt navn i det tilfelle
                 unik_fil = get_save_file(path)
 

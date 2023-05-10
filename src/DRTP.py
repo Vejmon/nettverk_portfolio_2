@@ -3,8 +3,10 @@ import sys
 import time
 import threading as th
 from struct import *
+
 # header format is always the same, so a variable is here for convenience
 header_format = '!IIHH'
+
 
 def split_packet(data):
     header_data = data[:12]
@@ -21,19 +23,16 @@ def split_packet(data):
         return remote_header, False
 
 
-# A_con Grunnklassen som har alt som er felles for de tre klassene
+# A_con Grunnklassen som har alt som er felles for de tre klassene,
 class A_Con:
 
-    # used to transmit a JSON object to server, letting server know about the client's -r and -f flag.
-    # fix let server know about -t flag aswell?
+    # used to transmit a JSON object to server,
+    # letting server know about the client's -r, -f, -w and -t flag set by a client.
     def grab_json(self, file_name):
         return '{"laddr": "%s", "raddr": "%s", "port": %s, "typ": "%s", "fil": "%s", "window": %s, "test": "%s"}' % \
             (self.laddr, self.raddr, self.port, type(self).__name__, file_name, self.window, self.test)
 
-    def __str__(self):
-        return '{"laddr": "%s", "raddr": "%s", "port": %s, "typ": "%s"}' % \
-            (self.laddr, self.raddr, self.port, type(self).__name__)
-
+    # a constructor creating classes of type A_Con
     def __init__(self, laddr, raddr, port, window, test):
         self.laddr = laddr
         self.raddr = raddr
@@ -51,20 +50,25 @@ class A_Con:
         self.con = con
         return
 
+    # used by a client
     # bind a UDP (SOCK_DGRAM) socket to local ipv4_address (AF_INET) and port.
     def bind_con(self):
         self.con.bind((self.laddr, self.port))
 
     # appends body to end of local_header
-    # body must be byte object
+    # if body is not bytes-like object, it's not appended to the end of the header.
     def create_packet(self, data):
         packet = self.local_header.build_header()
-        if data:
+        if isinstance(data, bytes):
             packet = packet + data
-        # print(f'packet containing header + data of size {len(packet)}')  # just to show the length of the packet
-        return packet
+            return packet
+        else:
+            print(f"{data} is not a bytes-like object, it's not appended to header\n{self.local_header}")
+            return packet
 
-    # a function used to send a establish a connection, from a client to a server.
+    # a function used to establish a connection, from a client to a server.
+    # returns True if an ack is received from a server.
+    # also sends some information about the connecting client
     def send_hello(self, fil_name):
         # this procedure is only for the first syn_message
         # set syn flag to 1
@@ -75,17 +79,24 @@ class A_Con:
         body = self.grab_json(fil_name).encode()
         packet = self.create_packet(body)
 
-        self.con.settimeout(self.timeout)
         counter = 0
         # attempt multiple times to start a connection
         while True:
+
+            self.con.settimeout(self.timeout)
+
             print("\nsending hello:")
             print(self.local_header)
 
+            time_sent = time.time()
             self.con.sendto(packet, (self.raddr, self.port))
             # wait for a response from the server
             try:
                 data, addr = self.con.recvfrom(12)
+                # set timeout to four times the RTT
+                self.timeout = (time.time() - time_sent) * 4
+                print(f"timeout set to: {self.timeout}")
+
                 # break out of loop if we got anything
                 self.remote_header, body = split_packet(data)
                 if self.remote_header.get_ack() and self.remote_header.get_syn():
@@ -113,7 +124,6 @@ class A_Con:
         # set alle flag til 0
         self.local_header.set_flags("0000")
 
-
     # a function to respond to the first connection from a client.
     def answer_hello(self):
         # set wait timeout, set to rtt in future fix fix
@@ -132,7 +142,7 @@ class A_Con:
             print("sendt header")
             print(self.local_header)
             # create empty packet
-            packet = self.create_packet(None)
+            packet = self.create_packet(b'')
 
             # set empty data to silence warning
             data = b''
@@ -279,7 +289,6 @@ class StopWait(A_Con):
 
     # Receive data, send ack: Server side
     def recv(self, chunk_size):
-        # Timeout
         self.con.settimeout(self.timeout)
 
         # recieve packets untill we have the one we are looking for.
@@ -344,14 +353,12 @@ class GoBackN(A_Con):
         print("sjekk headers Client!")
         return False
 
-
     def __init__(self, laddr, raddr, port, window, test):
         super().__init__(laddr, raddr, port, window, test)
         self.window = window
         self.timeout = 1
         self.list_local_headers = []
         self.list_remote_headers = []
-
 
     # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
@@ -361,7 +368,7 @@ class GoBackN(A_Con):
         self.con.settimeout(self.timeout)
         # receive packets if we timeout we stop receiving and look at what we got.
         for packet in self.list_local_headers:
-            try:    # receive acks from server
+            try:  # receive acks from server
                 data, addr = self.con.recvfrom(12)
                 header, body = split_packet(data)
                 self.list_remote_headers.append(header)
@@ -404,7 +411,6 @@ class GoBackN(A_Con):
         else:
             return False
 
-
     def send_fin(self):
         # set fin flag in local header
         self.local_header.set_fin(True)
@@ -417,7 +423,6 @@ class GoBackN(A_Con):
             print(f"fin_ack:\n{header}")
         except TimeoutError:
             print("didn't receive fin_ack:\nquitting")
-
 
     def send(self, data):
 
@@ -456,14 +461,12 @@ class GoBackN(A_Con):
 
             # if list is smaller than window, and we don't have the fin flag set in last item we want more packets
             if len(self.list_local_headers) < self.window and \
-                not self.list_local_headers[len(self.list_local_headers) - 1].get_fin():
+                    not self.list_local_headers[len(self.list_local_headers) - 1].get_fin():
                 return True
 
             # if we receive no acks in four attempts, we quit
             if attempt_counter == 4:
                 return False
-
-
 
     def recv(self, chunk_size):
         # Timeout
@@ -523,10 +526,9 @@ class SelectiveRepeat(A_Con):
             else:
                 print(f"\nack for packet not received, resending \n{pkt}")
 
-
     def send(self, data):
         # Sender's actions in Selective Repeat
-        #1. checks the next available sequence number for the packet
+        # 1. checks the next available sequence number for the packet
         # if the seq number is within the sender's window, the packet is sent
 
         # 2. each packet has its own timer, since only a single packet will be transmitted on timeout
@@ -536,7 +538,6 @@ class SelectiveRepeat(A_Con):
         #       the window base is moved forward to the unacknowledged packet with the smallest seq number
         #           if the window moves and there are untransmitted packets with seq numbers that now falls within the window,
         #           these packets are now transmitted
-
 
         last_nr_in_sequence = 0
         self.list_acked.sort()
@@ -565,7 +566,7 @@ class SelectiveRepeat(A_Con):
 
         for pkt in self.list_local_headers:
             if pkt.get_seqed() not in self.list_sending_threads:
-                t = th.Thread(target=self.send_packet, args=(pkt,),  daemon=True).start()
+                t = th.Thread(target=self.send_packet, args=(pkt,), daemon=True).start()
                 self.list_sending_threads.append(pkt.get_seqed())
 
         # hvis vi får en ACK sjekk om det er i vindu, hvis det er i vindu -> legg til i lista
@@ -574,16 +575,18 @@ class SelectiveRepeat(A_Con):
         #   hvis det er lik, flytt vinduet til neste pakke som ikke har fått ACK
         #   hvis vi flytter vinduet -> send nye pakker
         while True:
-        # jobb med å fjerne acked pakker fra self.list_local_headers
+            # jobb med å fjerne acked pakker fra self.list_local_headers
             try:
                 data, addr = self.con.recvfrom(12)
                 header, body = split_packet(data)
 
                 print(f"\ngot an ack:\n{header}")
 
-                if header.get_acked() not in self.list_acked:
-                    self.local_header.increment_acked()
-                    self.list_acked.append(header.get_acked())
+                # sjekk om ack er i vinduet
+                if send_base <= header.get_acked() <= send_baseN:
+                    if header.get_acked() not in self.list_acked:
+                        self.list_acked.append(header.get_acked())
+                        self.local_header.increment_acked()
 
                 # ta ut pakker som er blitt acked av server
                 self.list_acked.sort()
@@ -592,26 +595,17 @@ class SelectiveRepeat(A_Con):
                         self.list_local_headers.remove(pkt)
                         # update local header so that a new base is set.
 
-                # index last non acked is now the new base at next run.
-
                 # sjekk om ACK number er lik send_base
                 if header.get_acked() == send_base:
                     print("got first ack in window")
                     # return for more packets
                     return True
 
-                #sjekk om acked er i vinduet
-                elif send_base < header.get_acked() <= send_baseN:
-                    if header.get_acked() not in self.list_acked:
-                        self.list_acked.append(header.get_acked())
-
             except TimeoutError:
                 # return for more packets
-                if not self.local_header.get_fin():
-                    return True
+                return True
 
     def recv(self, chunk_size):
-
 
         # Receivers actions in Selective Repeat
         # 1. packet with sequence number in rcv_base - rcv_base+N+1 is correctly received
@@ -622,14 +616,14 @@ class SelectiveRepeat(A_Con):
         #   send an ACK even though this is a packet that the receiver has previously acknowledged
         # 3. Otherwise: ignore the packet
 
-        #base of the window
+        # base of the window
         rcv_base = self.local_header.get_acked() + 1
 
-        #end of the window
+        # end of the window
         rcv_baseN = rcv_base + self.window
 
         # set an arbitrary long timeout
-        self.con.settimeout(15)
+        self.con.settimeout(5)
 
         while True:
 
@@ -672,7 +666,7 @@ class SelectiveRepeat(A_Con):
                     counter = 0
                     for pkt in self.list_remote_headers:
                         if pkt.get_seqed() == rcv_base + counter:
-                            if isinstance(body, bytes):
+                            if isinstance(pkt.body, bytes):
                                 total_body += pkt.body
                             self.local_header.set_fin(pkt.get_fin())
                             self.remote_header.set_fin(pkt.get_fin())
@@ -704,7 +698,10 @@ class SelectiveRepeat(A_Con):
                 return False
 
 
+# a class to handle headers,
+# has many functions to grab and set different variables in the 12 bytes that is a header
 class Header:
+    # used to print information about a header,
     def __str__(self):
         return '{"seqed": %s, "acked": %s, "syn": %s, "ack": %s, "fin": %s, "win": %s}' % \
             (self.seqed, self.acked, self.syn, self.ack, self.fin, self.win)
