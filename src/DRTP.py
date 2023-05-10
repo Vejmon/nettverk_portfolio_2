@@ -8,6 +8,8 @@ from struct import *
 header_format = '!IIHH'
 
 
+# static method to create a header object from the first twelve bytes of a byte-like object,
+# and appending the rest as a body
 def split_packet(data):
     header_data = data[:12]
     body = False
@@ -88,14 +90,17 @@ class A_Con:
             print("\nsending hello:")
             print(self.local_header)
 
+            # time the sending of a first hello packet
             time_sent = time.time()
             self.con.sendto(packet, (self.raddr, self.port))
             # wait for a response from the server
             try:
                 data, addr = self.con.recvfrom(12)
                 # set timeout to four times the RTT
-                self.timeout = (time.time() - time_sent) * 4
-                print(f"timeout set to: {self.timeout}")
+                time_received = time.time()
+
+                self.timeout = (time_received - time_sent) * 4
+                print(f"RTT is measured to:{time_received - time_sent}\ntimeout set to: {self.timeout}")
 
                 # break out of loop if we got anything
                 self.remote_header, body = split_packet(data)
@@ -145,16 +150,20 @@ class A_Con:
             packet = self.create_packet(b'')
 
             # set empty data to silence warning
-            data = b''
 
             # attempt to transmit an answer.
             counter = 0
             while True:
+                time_sent = time.time()
                 self.con.sendto(packet, (self.raddr, self.port))
 
                 try:
                     data, addr = self.con.recvfrom(500)
                     self.remote_header, body = split_packet(data)
+                    # set timeout to four times the RTT
+                    time_received = time.time()
+                    self.timeout = (time_received - time_sent) * 4
+                    print(f"RTT is measured to be:{time_received - time_sent}\ntimeout set to{self.timeout}")
 
                     # if we receive a syn packet again, respond again!
                     if self.remote_header.get_syn():
@@ -267,8 +276,8 @@ class StopWait(A_Con):
         self.local_header.body = data
         pakke = self.local_header.complete_packet()
 
-        # Try to send the packet 6 times
-        for i in range(6):
+        # Try to send the packet 15 times
+        for i in range(15):
 
             self.con.settimeout(self.timeout)  # Set timeout for resending packet
             self.con.sendto(pakke, (self.raddr, self.port))
@@ -293,7 +302,7 @@ class StopWait(A_Con):
 
         # recieve packets untill we have the one we are looking for.
         # quit if we never receive a packet.
-        for i in range(6):
+        for i in range(15):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
@@ -367,7 +376,7 @@ class GoBackN(A_Con):
 
         self.con.settimeout(self.timeout)
         # receive packets if we timeout we stop receiving and look at what we got.
-        for packet in self.list_local_headers:
+        for i in range(len(self.list_local_headers)):
             try:  # receive acks from server
                 data, addr = self.con.recvfrom(12)
                 header, body = split_packet(data)
@@ -472,8 +481,8 @@ class GoBackN(A_Con):
         # Timeout
         self.con.settimeout(self.timeout)
 
-        # recieve packets untill we have the one we are looking for.
-        # quit if we never receive a packet.
+        # recieve packets in sequence and order until we have a fin flag.
+        # quit if we don't receive a packet or the wrong packet to many times.
         for i in range(6):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
@@ -506,6 +515,7 @@ class SelectiveRepeat(A_Con):
         self.list_local_headers = []
         self.list_acked = []
         self.list_remote_headers = []
+        self.still_sending = True
 
     # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
@@ -517,7 +527,7 @@ class SelectiveRepeat(A_Con):
 
     def send_packet(self, pkt):
         # sends a packet, then sleeps and checks if an ack is received, if not we resend the packet
-        for i in range(7):
+        for i in range(20):
             print(f"\nsending packet{pkt}")
             self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
             time.sleep(self.timeout)
@@ -525,6 +535,18 @@ class SelectiveRepeat(A_Con):
                 return
             else:
                 print(f"\nack for packet not received, resending \n{pkt}")
+        print(f"never got an ack for\n{pkt}\n giving up")
+        self.still_sending = False
+
+    def last_pkt_in_sequence(self):
+        last_nr_in_sequence = 0
+        self.list_acked.sort()
+        for i in range(len(self.list_acked)):
+            if i + 1 == self.list_acked[i]:
+                last_nr_in_sequence = i + 1
+            else:
+                break
+        return last_nr_in_sequence
 
     def send(self, data):
         # Sender's actions in Selective Repeat
@@ -536,16 +558,18 @@ class SelectiveRepeat(A_Con):
         # 3. if an ACK is received, the sender marks the packet as received, provided its in the window
         #       if the seq number is equal to send_base,
         #       the window base is moved forward to the unacknowledged packet with the smallest seq number
-        #           if the window moves and there are untransmitted packets with seq numbers that now falls within the window,
-        #           these packets are now transmitted
+        #           if the window moves and there are untransmitted packets with seq numbers that now falls
+        #           within the window, these packets are now transmitted
 
-        last_nr_in_sequence = 0
-        self.list_acked.sort()
-        for i in range(len(self.list_acked)):
-            if i + 1 == self.list_acked[i]:
-                last_nr_in_sequence = i + 1
-            else:
-                break
+        # grab the last seq number which is in sequence with all whole numbers. [1,2,3,5,6] will return 3
+
+        if not self.still_sending:
+            print(f"a packet in this window was never received")
+            for pkt in self.list_local_headers:
+                print(pkt)
+            return False
+
+        last_nr_in_sequence = self.last_pkt_in_sequence()
 
         send_base = last_nr_in_sequence + 1
         send_baseN = send_base + self.window
@@ -561,12 +585,12 @@ class SelectiveRepeat(A_Con):
         if not self.local_header.get_fin() and send_base <= a_packet.get_seqed() < send_baseN - 1:
             return True
 
-        print(f"sending packets: base:{send_base} baseN:{send_baseN}\nlist of acks:{self.list_acked}")
+        print(f"sending packets: base:{send_base} baseN:{send_baseN}")
         # send all the packets
 
         for pkt in self.list_local_headers:
             if pkt.get_seqed() not in self.list_sending_threads:
-                t = th.Thread(target=self.send_packet, args=(pkt,), daemon=True).start()
+                th.Thread(target=self.send_packet, args=(pkt,), daemon=True).start()
                 self.list_sending_threads.append(pkt.get_seqed())
 
         # hvis vi får en ACK sjekk om det er i vindu, hvis det er i vindu -> legg til i lista
@@ -601,6 +625,9 @@ class SelectiveRepeat(A_Con):
                     # return for more packets
                     return True
 
+                if header.get_fin() and header.get_seqed() == self.last_pkt_in_sequence():
+                    print(f"found fin ack, and last packed was received\n{header}")
+
             except TimeoutError:
                 # return for more packets
                 return True
@@ -627,7 +654,7 @@ class SelectiveRepeat(A_Con):
 
         while True:
 
-            print(f"base:{rcv_base}, baseN:{rcv_baseN}, list acked:\n{self.list_acked}")
+            print(f"base:{rcv_base}, baseN:{rcv_baseN}")
 
             try:
                 data, addr = self.con.recvfrom(chunk_size)
@@ -656,12 +683,7 @@ class SelectiveRepeat(A_Con):
                     self.list_remote_headers.sort(key=HeaderWithBody.get_seqed)
                     self.list_acked.sort()
 
-                    for pkt in self.list_remote_headers:
-                        print(pkt)
-                    print(self.list_acked)
-
                     # move window beyond last packet in sequence
-                    last_nr_in_sequence = rcv_base
                     total_body = b''
                     counter = 0
                     for pkt in self.list_remote_headers:
@@ -675,26 +697,32 @@ class SelectiveRepeat(A_Con):
                         else:
                             break
 
-                    # remove items in list which are returned
+                    # remove items in list which are to be returned
                     del self.list_remote_headers[:counter]
 
                     # return payload and get more packets
                     return total_body
 
-                # seq number between rcv_base-N and rcv_base-1 is received
-
+                # seq nr is below base, we just ack the packet
                 elif header.get_seqed() < rcv_base:
                     # send an ACK even though this is a packet that the receiver has previously acknowledged
                     header.set_acked(header.get_seqed())
                     print(f"\nheader is below base, sending ack nonetheless:\n{header}")
+                    # returns only the twelve bytes in the header, the body is not sent back
                     self.con.sendto(header.build_header(), (self.raddr, self.port))
 
                 # seq number is higher than the seq numbers in the window
                 else:
                     # ignore the packet
-                    print(f"seqnr is outside of window{header}")
+                    print(f"seqnr is ahead of window{header}")
 
             except AttributeError:
+                return False
+
+            except TimeoutError:
+                # here I would have liked to send NACK for the missing packets in a window
+                # instead, I just quit
+                print("server timed out, didn't receive packet for a long time")
                 return False
 
 

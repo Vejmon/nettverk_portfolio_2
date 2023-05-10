@@ -185,7 +185,7 @@ def client():
             send_succesfull = method.send(chunk)
             chunk = fil.read(1460)
 
-    # if we got this far and transfering bytes was a success, we send a last packet with the fin flag.
+    # if we got this far and transfering bytes was a success, we send a last packet with the fin flag, else we quit.
     if send_succesfull:
         method.send_fin()
     else:
@@ -206,7 +206,6 @@ def server():
             try:
                 data, addr = serv_sock.recvfrom(500)
                 # grab the time we received a packet
-                time_received = time.time()
                 header, body = DRTP.split_packet(data)
 
                 # if header doesn't have syn flag, it's an old packet,
@@ -270,9 +269,6 @@ def server():
             # start over if the remote client doesn't respond to our answer
             if remote_client.answer_hello():
 
-                # sets timeout to four times the RTT
-                remote_client.timeout = (time.time() - time_received) * 4
-                print(f"setting timeout to: {remote_client.timeout}")
                 # lager en fil fil i ut mappen
                 # hvis filen fins, inkrementerer med 1
                 filnavn = en_client['fil']
