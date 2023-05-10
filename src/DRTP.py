@@ -572,7 +572,7 @@ class SelectiveRepeat(A_Con):
         #   hvis ACK ikke i vindu -> ikke registrer
         # sjekk om ACK number er lik send_base
         #   hvis det er lik, flytt vinduet til neste pakke som ikke har fått ACK
-        #       hvis vi flytter vinduet -> send nye pakker
+        #   hvis vi flytter vinduet -> send nye pakker
         while True:
         # jobb med å fjerne acked pakker fra self.list_local_headers
             try:
@@ -672,7 +672,7 @@ class SelectiveRepeat(A_Con):
                     counter = 0
                     for pkt in self.list_remote_headers:
                         if pkt.get_seqed() == rcv_base + counter:
-                            if body:
+                            if isinstance(body, bytes):
                                 total_body += pkt.body
                             self.local_header.set_fin(pkt.get_fin())
                             self.remote_header.set_fin(pkt.get_fin())
