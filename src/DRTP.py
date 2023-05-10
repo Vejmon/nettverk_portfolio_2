@@ -633,23 +633,6 @@ class SelectiveRepeat(A_Con):
 
         while True:
 
-            """# grab last header, and check for fin flag
-            print("erher")
-            if self.list_remote_headers:
-                full_list = True
-                last_header = self.list_remote_headers[-1]
-                # check if we have every step
-                if any(Header.get_fin(pkt) is True for pkt in self.list_remote_headers):
-                    print("fant fin")
-                    for i in range(len(self.list_acked)):
-                        if not i+1 == self.list_acked[i]:
-                            full_list = False
-                            print(f"listen er ikke full\n{self.list_acked}")
-                            break
-                    if full_list:
-                        # set remote_header to fin and return zero bytes
-                        self.local_header.set_fin(True)
-                        return b''"""
             print(f"base:{rcv_base}, baseN:{rcv_baseN}, list acked:\n{self.list_acked}")
 
             try:
@@ -715,12 +698,10 @@ class SelectiveRepeat(A_Con):
                 # seq number is higher than the seq numbers in the window
                 else:
                     # ignore the packet
-
                     print(f"seqnr is outside of window{header}")
 
             except AttributeError:
                 return False
-
 
 
 class Header:

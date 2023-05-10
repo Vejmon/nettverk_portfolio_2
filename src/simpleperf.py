@@ -205,6 +205,18 @@ def server():
             # recieve first syn from client
             try:
                 data, addr = serv_sock.recvfrom(500)
+                header, body = DRTP.split_packet(data)
+
+                # if header doesn't have syn flag, it's an old packet,
+                # we send an ack to calm the client
+                if not header.get_syn():
+                    print(f"got an old header, sending an ack\n{header}")
+                    header.set_acked(header.get_seqed())
+                    header.set_ack(True)
+                    serv_sock.sendto(header.build_header(), addr)
+                    serv_sock.close()
+                    break
+
             except KeyboardInterrupt:
                 print("Keyboard interrupt recieved, exiting server")
                 sys.exit(1)
