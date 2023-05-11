@@ -4,11 +4,9 @@ import sys
 import argparse
 import socket
 import os
-import threading as th
 import ipaddress
 import time
 import json
-import math
 import DRTP
 
 
@@ -35,7 +33,7 @@ def get_ip():
         return "10.0.1.2"
 
 
-# function to validate the ip address given as an argument, validatet with a regex pattern and the ipaddress library.
+# function to validate the ip address given as an argument, validated with a regex pattern and the ipaddress library.
 # if we don't have a valid ip address we terminate the program, and print a fault
 def valid_ip(inn):  # ip address must start with 1-3 digits seperated by a dot, repeated three more times.
     # I've decided to use an incomplete regex, "257.0.0.0" for example isn't an ip address but this regex allows them.
@@ -54,6 +52,19 @@ def valid_ip(inn):  # ip address must start with 1-3 digits seperated by a dot, 
     return str(ip)
 
 
+# check if the argument deciding window size is valid.
+def valid_window(inn):
+    # if the input isn't an integer, we complain and quit
+    try:
+        ut = int(inn)
+    except TypeError:
+        raise argparse.ArgumentTypeError(f"window must be an integer, {inn} isn't")
+    # if the input isn't within range, we complain and quit
+    if not (1 <= ut):
+        raise argparse.ArgumentTypeError(f'window number: ({inn}) must be a positive integer')
+    return ut
+
+
 # check if port is an integer and between 1024 - 65535
 def valid_port(inn):
     # if the input isn't an integer, we complain and quit
@@ -67,10 +78,10 @@ def valid_port(inn):
     return ut
 
 
-# attempts to grab a specified file.
+# checks if the specified file is in the filesystem.
 def valid_file(name):
-    abs = os.path.dirname(__file__)
-    path = abs + f"/../img/{name}"
+    absolute = os.path.abspath(os.path.dirname(__file__))
+    path = absolute + f"/../img/{name}"
     if os.path.isfile(path):
         return path
     else:
@@ -78,102 +89,221 @@ def valid_file(name):
         sys.exit(1)
 
 
+# used to get a new name to save incoming file to in the ut folder,
+# example kameleon.jpg already exists, we increment to kameleon_1.jpg
+# looked at how to perform this task on this site:
+# https://stackoverflow.com/questions/13852700/create-file-but-if-name-exists-add-number
+def get_save_file(path):
+    file = path.split('/')[-1]
+    filename, extension = os.path.splitext(file)
+
+    counter = 1
+    while os.path.exists(path):
+        file = path.split('/')[-1]
+        path = path[:-len(file)] + filename + "_" + str(counter) + extension
+        counter += 1
+    return path
+
+
 # parse arguments the user may input when running the skript, some are required in a sense, others are optional
+# the "help" message may be accessed by invoking the program with the -h flag
 def get_args():
     # start the argument parser
     parse = argparse.ArgumentParser(prog="FileTransfer",
-        description="transfer a chosen file between two hosts, uses UDP and "
-                    "a custom protocol DRTP for reliable transfer.",
-        epilog='simpleperf --help')
+                                    description="transfer a chosen file between two hosts, uses UDP and "
+                                                "a custom protocol DRTP for reliable transfer.",
+                                    epilog='simpleperf --help')
 
     # optional arguments, with long and short name, default values when needed, info for the help page
     parse.add_argument('-s', '--server', action='store_true', help='enables server mode')
     parse.add_argument('-c', '--client', action='store_true', help='enables client mode')
-    parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open")
+    parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open, default is 8088")
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
-                       help="ipv4 adress to bind server to, default binds to local address")
-    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'neteem', 'skipseq'], default="norm",
-                       help="run tests on a server, loss drops some packets, skipack skips acking some packets,"
-                            "neteem implements tc-netem")
+                       help="ipv4 adress to bind server to, default attempts to bind to local address")
+    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'skipseq', 'reorder'], default="norm",
+                       help="run tests on a server or client, loss drops some packets, "
+                            "\nskipack skips acking some packets, skipseq skips a sequence nr. "
+                            "\nReorder reorders the packets in a window only works with gbn and sr")
 
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
                        help="ipv4 address to connect with, default connects with node h1")
-    parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",
+    parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",  # alle_dyr.png
                        help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
     parse.add_argument('-r', '--reli', choices=['sw', 'sr', 'gbn'], default="sw",
                        help='choose which method used for reliable transfer, '
                             'sw is stop wait, gbn is go back n, sr is selective repeat.')
+    parse.add_argument('-w', '--window', type=valid_window, default=5,
+                       help='window size used for reliable transfer, when using "go back n" or "selective repeat"'
+                            'window size must be a positive integer')
 
     # parse the arguments
     return parse.parse_args()
 
 
+# grab arguments from user
 args = get_args()
 
-# an instance of simpleperf may only be server or client, this functions as an xor operator
+# an instance of simpleperf may only be server or client, this functions as a xor operator
 if not (args.server ^ args.client):
     raise AttributeError("you must run either in server or client mode")
 
 
+# starts a client version of the program, and sets up the DRTP in the requested reliable transfer method.
+# also breaks the file into bytes to create packets from, and transfers those bytes as long as there are more to send
+# first we must use send_hello to establish a connection and send information about our client.
+# then after transferring the file we say goodbye.
 def client():
+    # sets method for reliable transfer.
     if args.reli == "gbn":
-        method = DRTP.GoBackN(args.bind, args.serverip, args.port)
+        method = DRTP.GoBackN(args.bind, args.serverip,
+                              args.port, args.window, args.test)
     elif args.reli == 'sr':
-        method = DRTP.SelectiveRepeat(args.bind, args.serverip, args.port)
+        method = DRTP.SelectiveRepeat(args.bind, args.serverip,
+                                      args.port, args.window, args.test)
     else:
-        method = DRTP.StopWait(args.bind, args.serverip, args.port)
+        method = DRTP.StopWait(args.bind, args.serverip,
+                               args.port, 1, args.test)
+    # binds UDP connection to local ipv4 address and port.
+    method.bind_con()
 
+    # let server know we are trying to connect,
+    # the argument in send_hello is the filename we are going to attempt to transmit
+    method.send_hello(args.file.split('/')[-1])
 
-    # create connection type based upon the arguments.
-    # open a socket using ipv4 address(AF_INET), and a UDP connection (SOCK_DGRAM)
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cli_sock:
+    print(f"test navn: {method.test}")
 
-        method.set_con(cli_sock)
-        with open(args.file, 'rb') as fil:
+    # sender pakker så lenge det fins deler å lese og forige sending gikk bra
+    # 'rb' is read, bytes so the file is opened and read as bytes, we read 1460 bytes at a time,
+    # unless there aren't enough bytes left
+    with open(args.file, 'rb') as fil:
+        # if last sending wasn't succesfull we quit.
+        send_succesfull = True
+        chunk = fil.read(1460)
+        # create first packet so that we don't send an extra empty packet.
+        while chunk and send_succesfull:
+            send_succesfull = method.send(chunk)
             chunk = fil.read(1460)
-            while chunk:
-                method.send(chunk)
-                chunk = fil.read(1460)
+
+    # if we got this far and transfering bytes was a success, we send a last packet with the fin flag, else we quit.
+    if send_succesfull:
+        method.send_fin()
+    else:
+        print("sending failed! exiting")
+        sys.exit(1)
 
 
+#
 def server():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as serv_sock:
         serv_sock.bind((args.bind, args.port))
-        print(f"server at {args.bind}:{args.port} is ready to receive")
         while True:
+            print(f"server at {args.bind}:{args.port} is ready to receive")
+            # wait indefinetly for a new connection
+            serv_sock.settimeout(None)
+
             # recieve first syn from client
             try:
                 data, addr = serv_sock.recvfrom(500)
+                # grab the time we received a packet
+                header, body = DRTP.split_packet(data)
+
+                # if header doesn't have syn flag, it's an old packet,
+                # we send an ack to calm the client
+                if not header.get_syn():
+                    print(f"got an old header, sending an ack\n{header}")
+                    header.set_acked(header.get_seqed())
+                    header.set_ack(True)
+                    serv_sock.sendto(header.build_header(), addr)
+                    serv_sock.close()
+                    break
+
             except KeyboardInterrupt:
                 print("Keyboard interrupt recieved, exiting server")
                 sys.exit(1)
 
-            header = data[:12]
-            body = data[12:]
-            en_client = json.loads(body.decode())
+            # grab header and body from the packet.
+            header, body = DRTP.split_packet(data)
+            # if an old client is still attempting to send packets, there might be some issues
+            try:
+                print(header)
 
-            # creates a "creates" a clone of the client attempting to connect.
+                en_client = json.loads(body.decode())
+
+            except UnicodeDecodeError:
+                serv_sock.close()
+                print("wrong packet received, body is not a JSON! \nrestarting server")
+                break
+            except AttributeError:
+                serv_sock.close()
+                print("wrong packet received, body is not a JSON! \nrestarting server")
+                break
+
+            # create a server version of the client attempting to connect,
+            # we grab the -r and -f flag from the client. (reliable method and filename)
             if en_client['typ'] == 'GoBackN':
-                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'], args.port)
+                remote_client = DRTP.GoBackN(args.bind, en_client['laddr'],
+                                             args.port, en_client['window'], en_client['test'])
             elif en_client['typ'] == 'StopWait':
-                remote_client = DRTP.StopWait(args.bind, en_client['laddr'], args.port)
+                remote_client = DRTP.StopWait(args.bind, en_client['laddr'],
+                                              args.port, 1, en_client['test'])
             elif en_client['typ'] == 'SelectiveRepeat':
-                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'], args.port)
+                remote_client = DRTP.SelectiveRepeat(args.bind, en_client['laddr'],
+                                                     args.port, en_client['window'], en_client['test'])
             else:
+                # quit if something unforeseen has happened
                 print("client information insuficient, exiting")
-                sys.exit()
+                break
 
-            # hands the socket over,
+            # hands over the received header from the connected client
+            remote_client.remote_header = header
+
+            # hands the socket over, for future transfers.
             remote_client.set_con(serv_sock)
-            # responds to the client, and let them know we are ready to recieve
-            time.sleep(1)
-            remote_client.answer_hello(header)
 
-            chunks = []
+            print(f"test navn: {remote_client.test}")
 
-            while remote_client.local_header.get_fin == 0:
-                chunks.append(remote_client.recv(1500))
+            print("\nmottat header")
+            print(remote_client.remote_header)
+
+            # start over if the remote client doesn't respond to our answer
+            if remote_client.answer_hello():
+
+                # lager en fil fil i ut mappen
+                # hvis filen fins, inkrementerer med 1
+                filnavn = en_client['fil']
+                absolute = os.path.abspath(os.path.dirname(__file__))
+                # hopper ut av src mappen
+                absolute = absolute[:-4]
+                path = absolute + f"/ut/{filnavn}"
+                # ser om filen allerede fins, lager nytt navn i det tilfelle
+                unik_fil = get_save_file(path)
+
+                # lager en tom fil.
+                print("making empty file at \n" + unik_fil)
+                open(unik_fil, "x")
+
+                # write to file as long as transmission isn't done and there is something in data.
+                with open(unik_fil, "ab") as skriv:
+                    data = remote_client.recv(1500)
+
+                    while not remote_client.local_header.get_fin() and data:
+                        skriv.write(data)
+                        data = remote_client.recv(1500)
+                # if we received a fin flag, we say goodbye
+                if remote_client.remote_header.get_fin():
+                    remote_client.answer_fin()
+                    print(f"saving file at\n{unik_fil}")
+
+                # we can infer that the transfer failed if we never got a fin flag,
+                # in that case we remove the half transfered file.
+                else:
+                    print("removing failed file")
+                    os.remove(path)
+
+        # restarts server after an error ocurs
+        time.sleep(3)
+        server()
 
 
 if args.server:
