@@ -491,12 +491,12 @@ class GoBackN(A_Con):
                 return True
             # send all the packets in order.
             print("\nsending packets:")
-            for packet in self.list_local_headers:
-                if not self.skip_seq(packet):
-                    if not self.reorder():
-                        print(packet)
-                        self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
-            # attempt to receive acks also trims away acked, packets
+            if not self.reorder():
+                for packet in self.list_local_headers:
+                    if not self.skip_seq(packet):
+                            print(packet)
+                            self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
+                # attempt to receive acks also trims away acked, packets
             self.recv_acks()
 
             if len(self.list_local_headers) == 0:
