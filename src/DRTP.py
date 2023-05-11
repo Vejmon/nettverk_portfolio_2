@@ -254,7 +254,49 @@ class A_Con:
 
         print("sjekk headers Client!\n")
         return False
+    
+    #Johan TA: kan gjøre tester veldig enkelt: 
+    #kan sette en bolean true if skip ack er satt og sjekkar true eller false
+    # for å få det i normal bane igjen etterpå: if bool: send else bool =true
+        
+    #Test-funksjonar:
+    def skipack(self): #Tar inn self 
+        # ack fra server blir borte
+        #self.acked == null #ulike scenario (ved å hoppa over til neste ack eller ack utan innhold)
+        return self.local_header.set_ack is None
 
+
+    def skipseq(self): #kva må han ta inn? og funksjonen må vel også kallast på i test-oppsettet i simpleperf?
+        #Setter sekvensnummer til ingenting og derfor returnerer metoden dette
+        return self.local_header.set_seqed is None
+      
+
+    def duplicate_ack(self): #kva må han ta inn? og funksjonen må vel også kallast på i test-oppsettet i simpleperf?
+        #tar inn en ack for å ikke forstyrre den naturlige flyten av acks:
+        self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port)) #nå kjem det ein gong - kjem an på kor i hovudkoden ein legg det inn.s
+        #må den returnera noko? nei? fordi den berre sender ein ack.
+        #return self.local_header.set_acked = self.local_header.set_acked - 1 # ack nummer (acked)
+        # return 0 for å unngå loop? 
+
+#Johan TA sa at denne blir fanga opp skipack og skipseq testar over - har fjerna i simpleperf og lagt inn duplicate_ack test i staden for
+    """ def packet_loss(self): #kva må han ta inn? og funksjonen må vel også kallast på i test-oppsettet i simpleperf?
+        #sender tom pakke og setter innholdet til ingenting:
+        packet = self.create_packet(b'')
+        self.local_header.set_flags("0000")
+        self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port)) """
+        
+
+    def reorder(self): #kva må han ta inn? og funksjonen må vel også kallast på i test-oppsettet i simpleperf?
+        #forslag: ta inn to pakkar, samanliknar seq og f eks 2 foran 3 (neste foran første)
+        denne = self.local_header.get_seqed
+        neste = self.local_header.set_seqed(self,denne+1)
+        #mellom er mellomlagring
+        mellom=denne
+        #bytter rekkefølgen: 
+        denne=neste
+        #mellom er mellomlagring
+        neste=mellom
+        return denne,neste
 
 # Det som mangler i A_con: Sende FIN header (si ha det)
 # det som er ferdig foreløpig er at ein startar prorgammet.
@@ -270,6 +312,7 @@ class StopWait(A_Con):
         self.remote_header = HeaderWithBody(bytearray(12), None)
 
     # Send data, receive ack: Client side
+    # skip ack - implementeres her som en boolean, hvis vi velger skip ack testen
     def send(self, data):
 
         self.local_header.increment_seqed()
