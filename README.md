@@ -37,17 +37,17 @@ the client can be invoked as follows:
     $ python3 simpleperf.py -c  (starts a connection to h3 at port 8088 and transmitt alle_dyr.png, with stop wait)
     $ python3 simpleperf.py -c -I <server_ip> -t <test_name> -f <file_in_img> -p <port> -r <method> -w <window_size>
 
-There is also a help page in the program, if run as follows:
+There is also a help page in the program, if invoked as follows:
 
     $ python3 simpleperf.py -h
 
 Will print a message to screen about what inputs are allowed and how they work. 
 
-The available tests are skipack,skipseq,reorder and dupack, it's required that the file used when testing is more than 1460 bytes,
+The available tests are skipack, skipseq, reorder and dupack, it's required that the file used when testing is more than 1460 bytes,
 since all tests are run on the second packet, reordering also requires two packets to make any sense, 
 reordering is therefore performed on the first available window, 
-NOTE the specified window must be smaller than the requested file when using reorder or the test will fail
 
+NOTE: the specified window must be smaller than the requested file when using reorder or the test will fail
 
 required filesystem to run the program:
 
