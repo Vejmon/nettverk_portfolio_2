@@ -253,7 +253,7 @@ class A_Con:
         print(self.local_header.__str__())
 
         # if the remote header is on the same sequence, and has acked the packet, we move on
-        if self.remote_header.get_ack() and self.remote_header.get_acked() == self.remote_header.get_seqed() and\
+        if self.remote_header.get_ack() and self.remote_header.get_acked() == self.remote_header.get_seqed() and \
                 self.remote_header.get_seqed() == self.local_header.get_seqed():
             print("godkjent\n")
             return True
@@ -480,6 +480,7 @@ class GoBackN(A_Con):
         if not self.local_header.get_fin() and len(self.list_local_headers) < self.window:
             return True
 
+
         # attempt to send and receive acks, if no acks are present four times we give up.
         attempt_counter = 0
 
@@ -491,10 +492,10 @@ class GoBackN(A_Con):
             # send all the packets in order.
             print("\nsending packets:")
             for packet in self.list_local_headers:
-
                 if not self.skip_seq(packet):
-                    print(packet)
-                    self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
+                    if not self.reorder():
+                        print(packet)
+                        self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
             # attempt to receive acks also trims away acked, packets
             self.recv_acks()
 
@@ -545,6 +546,19 @@ class GoBackN(A_Con):
 
         return None
 
+    def reorder(self):
+        if self.test == "reorder" and self.first_test:
+            self.first_test = False
+            # sort the list of outgoing headers to be reversed upside down
+            print("reordering\nsending packets:")
+            tmp_list = sorted(self.list_local_headers, key=HeaderWithBody.get_seqed, reverse=True)
+            for pkt in tmp_list:
+                print(pkt)
+                self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
+            return True
+
+        return False
+
 
 class SelectiveRepeat(A_Con):
     def __init__(self, laddr, raddr, port, window, test):
@@ -569,6 +583,20 @@ class SelectiveRepeat(A_Con):
         else:
             print("didn't get fin_ack")
         return send_succesfull
+
+    def reorder(self):
+        if self.test == "reorder" and self.first_test:
+            self.first_test = False
+            # sort the list of outgoing headers to be reversed upside down
+            print("reordering\nsending packets:")
+            # create a temporary inverted list
+            tmp_list = sorted(self.list_local_headers, key=HeaderWithBody.get_seqed, reverse=True)
+            for pkt in tmp_list:
+                print(pkt)
+                self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
+            return True
+
+        return False
 
     # used for threading in selective repeat attempt to send a packet many times,
     def send_packet(self, pkt):
@@ -636,10 +664,11 @@ class SelectiveRepeat(A_Con):
             return True
 
         print(f"adding packets to list of sending packets: base:{send_base} baseN:{send_baseN}")
-        for pkt in self.list_local_headers:
-            if pkt.get_seqed() not in self.list_sending_threads:
-                th.Thread(target=self.send_packet, args=(pkt,), daemon=True).start()
-                self.list_sending_threads.append(pkt.get_seqed())
+        if not self.reorder():
+            for pkt in self.list_local_headers:
+                if pkt.get_seqed() not in self.list_sending_threads:
+                    th.Thread(target=self.send_packet, args=(pkt,), daemon=True).start()
+                    self.list_sending_threads.append(pkt.get_seqed())
 
         # hvis vi får en ACK sjekk om det er i vindu, hvis det er i vindu -> legg til i lista
         #   hvis ACK ikke i vindu -> ikke registrer

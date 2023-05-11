@@ -172,7 +172,7 @@ def client():
     # the argument in send_hello is the filename we are going to attempt to transmit
     method.send_hello(args.file.split('/')[-1])
     if method.test:
-        print(f"test navn: {method.test}")
+        print(f"performing test: {method.test}")
 
     # grab the time we started sending packets
     time_start_sending = time.time()
@@ -276,7 +276,7 @@ def server():
 
             # tell user about what kind of test is to be run
             if remote_client.test:
-                print(f"test navn: {remote_client.test}")
+                print(f"performing test: {remote_client.test}")
 
             print("\nmottat header")
             print(remote_client.remote_header)
