@@ -41,6 +41,7 @@ class A_Con:
         self.port = port
         self.window = window
         self.test = test
+        self.first_test = True
         self.timeout = 4
         self.previous_packet = HeaderWithBody(bytearray(12), None)  # previous packet sent from client
         self.local_header = HeaderWithBody(bytearray(12), None)  # header we are attempting to send now
@@ -252,17 +253,28 @@ class A_Con:
         print(self.local_header.__str__())
 
         # if the remote header is on the same sequence, and has acked the packet, we move on
-        if self.remote_header.get_ack() and self.remote_header.get_acked() == self.remote_header.get_seqed():
+        if self.remote_header.get_ack() and self.remote_header.get_acked() == self.remote_header.get_seqed() and\
+                self.remote_header.get_seqed() == self.local_header.get_seqed():
             print("godkjent\n")
             return True
 
         print("sjekk headers Client!\n")
         return False
 
+    # test functions all tests except reorder ar run on the second set of packets
+    # if dupack flag is set, we dupliacte an ack
+    def duplicate_ack(self, pkt):
+        if self.test == "dupack" and pkt.get_seqed() == 2:
+            # send an aditional ack
+            print(f"\n\nsending duplicate ack\n{pkt}\n\n")
+            self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
 
-# Det som mangler i A_con: Sende FIN header (si ha det)
-# det som er ferdig foreløpig er at ein startar prorgammet.
-# data sendes i chunks med forskjellig header - tanken er å lag ein header funksjon
+    def skip_seq(self, pkt):
+        if self.test == "skipseq" and pkt.get_seqed() == 2 and self.first_test:
+            print(f"\n\nskiping sequence!\n{pkt}\n\n")
+            self.first_test = False
+            return True
+        return False
 
 
 class StopWait(A_Con):
@@ -285,8 +297,9 @@ class StopWait(A_Con):
 
             self.con.settimeout(self.timeout)  # Set timeout for resending packet
 
-
-            self.con.sendto(pakke, (self.raddr, self.port))
+            # check if we should run skipseq test
+            if not self.skip_seq(self.local_header):
+                self.con.sendto(pakke, (self.raddr, self.port))
 
             try:
                 remote_data, addr = self.con.recvfrom(50)
@@ -321,6 +334,10 @@ class StopWait(A_Con):
 
                     # send ack of new packet
                     self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
+
+                    # send duplicate_ack for packet_nr 2 if flag is set
+
+                    self.duplicate_ack(self.local_header)
                     return body
                 else:
                     # resend old ack
@@ -411,7 +428,9 @@ class GoBackN(A_Con):
 
         # remove packets before last incorrectly received packet
         del self.list_local_headers[0:index]
-
+        # print the remainder if there are any packets
+        if self.list_local_headers:
+            print("packets remaining in window")
         # set last acked in remaining packets
         for packet in self.list_local_headers:
             packet.set_acked(largest_ack)
@@ -463,8 +482,10 @@ class GoBackN(A_Con):
             # send all the packets in order.
             print("\nsending packets:")
             for packet in self.list_local_headers:
-                print(packet)
-                self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
+
+                if not self.skip_seq(packet):
+                    print(packet)
+                    self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
             # attempt to receive acks also trims away acked, packets
             self.recv_acks()
 
@@ -500,10 +521,14 @@ class GoBackN(A_Con):
                     self.local_header.increment_both()
 
                     self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
+                    # send duplicate_ack for packet_nr 2 if flag is set
+                    self.duplicate_ack(self.local_header)
                     return body
                 else:
                     # resend old ack
                     self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
+                    # send duplicate_ack for packet_nr 2 if flag is set
+                    self.duplicate_ack(self.local_header)
 
             except TimeoutError:
                 self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
@@ -541,8 +566,9 @@ class SelectiveRepeat(A_Con):
         # sends a packet, then sleeps and checks if an ack is received, if not we resend the packet
         for i in range(15):
             # sending the packet
-            print(f"sending: {pkt}")
-            self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
+            if not self.skip_seq(pkt):
+                print(f"sending: {pkt}")
+                self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
             # wait for an amount of time set by the RTT of the network.
             time.sleep(self.timeout)
             # if an ack is present we stop sending the packet.
@@ -687,6 +713,8 @@ class SelectiveRepeat(A_Con):
                     # ACK is returned to the sender
                     print(f"\nsending ack for:\n{header}")
                     self.con.sendto(header.build_header(), (self.raddr, self.port))
+                    # send duplicate_ack for packet_nr 2 if flag is set
+                    self.duplicate_ack(header)
 
                 # If seq = base, the window moves
                 if header.get_seqed() == rcv_base:
