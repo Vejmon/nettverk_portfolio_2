@@ -284,6 +284,8 @@ class StopWait(A_Con):
         for i in range(15):
 
             self.con.settimeout(self.timeout)  # Set timeout for resending packet
+
+
             self.con.sendto(pakke, (self.raddr, self.port))
 
             try:

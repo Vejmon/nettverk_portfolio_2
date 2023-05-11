@@ -120,10 +120,11 @@ def get_args():
     parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open, default is 8088")
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
                        help="ipv4 adress to bind server to, default attempts to bind to local address")
-    parse.add_argument('-t', '--test', choices=['norm', 'loss', 'skipack', 'skipseq', 'reorder'], default="norm",
+    parse.add_argument('-t', '--test', choices=['norm', 'skipack', 'skipseq', 'reorder', 'dupack'], default="norm",
                        help="run tests on a server or client, loss drops some packets, "
                             "\nskipack skips acking some packets, skipseq skips a sequence nr. "
-                            "\nReorder reorders the packets in a window only works with gbn and sr")
+                            "\nReorder reorders the packets in a window only works with gbn and sr"
+                            "\ndupack duplicates an ack from server.")
 
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
