@@ -173,10 +173,14 @@ def client():
 
     print(f"test navn: {method.test}")
 
+    # grab the time we started sending packets
+    time_start_sending = time.time()
+
     # sender pakker så lenge det fins deler å lese og forige sending gikk bra
     # 'rb' is read, bytes so the file is opened and read as bytes, we read 1460 bytes at a time,
     # unless there aren't enough bytes left
     with open(args.file, 'rb') as fil:
+        fil_size = fil.__sizeof__() / 1000
         # if last sending wasn't succesfull we quit.
         send_succesfull = True
         chunk = fil.read(1460)
@@ -188,6 +192,11 @@ def client():
     # if we got this far and transfering bytes was a success, we send a last packet with the fin flag, else we quit.
     if send_succesfull:
         method.send_fin()
+        total_transfer_time = time.time() - time_start_sending
+        str_total_time = "%.3fs" % total_transfer_time
+        str_rate = "%.3fKB/s" % (fil_size/total_transfer_time)
+        print(f"total transfer time: {str_total_time}\ntotal file size: {fil_size}KB\nacheived rate: {str_rate}")
+
     else:
         print("sending failed! exiting")
         sys.exit(1)
@@ -224,23 +233,25 @@ def server():
 
             # grab header and body from the packet.
             header, body = DRTP.split_packet(data)
+            print(header)
+
             # if an old client is still attempting to send packets, there might be some issues
             try:
-                print(header)
-
+                # attempt to grab the information given by a connecting client.
                 en_client = json.loads(body.decode())
-
             except UnicodeDecodeError:
+                # close the socket, so it may be opened anew by the server loop
                 serv_sock.close()
                 print("wrong packet received, body is not a JSON! \nrestarting server")
                 break
             except AttributeError:
+                # close the socket, so it may be opened anew by the server loop
                 serv_sock.close()
                 print("wrong packet received, body is not a JSON! \nrestarting server")
                 break
 
             # create a server version of the client attempting to connect,
-            # we grab the -r and -f flag from the client. (reliable method and filename)
+            # we grab the -r, -f, w and t flag from the client. (reliable method, filename, window and test flag)
             if en_client['typ'] == 'GoBackN':
                 remote_client = DRTP.GoBackN(args.bind, en_client['laddr'],
                                              args.port, en_client['window'], en_client['test'])
@@ -252,7 +263,8 @@ def server():
                                                      args.port, en_client['window'], en_client['test'])
             else:
                 # quit if something unforeseen has happened
-                print("client information insuficient, exiting")
+                print("client information insufficient, couldn't decide type of connecting client, exiting")
+                serv_sock.close()
                 break
 
             # hands over the received header from the connected client
@@ -261,8 +273,8 @@ def server():
             # hands the socket over, for future transfers.
             remote_client.set_con(serv_sock)
 
+            # tell user about what kind of test is to be run
             print(f"test navn: {remote_client.test}")
-
             print("\nmottat header")
             print(remote_client.remote_header)
 
@@ -270,15 +282,14 @@ def server():
             if remote_client.answer_hello():
 
                 # lager en fil fil i ut mappen
-                # hvis filen fins, inkrementerer med 1
                 filnavn = en_client['fil']
                 absolute = os.path.abspath(os.path.dirname(__file__))
-                # hopper ut av src mappen
+                # går tilbake fra src mappen
                 absolute = absolute[:-4]
+                # hopper inn i ut mappen
                 path = absolute + f"/ut/{filnavn}"
-                # ser om filen allerede fins, lager nytt navn i det tilfelle
+                # hvis filen fins, inkrementerer med 1
                 unik_fil = get_save_file(path)
-
                 # lager en tom fil.
                 print("making empty file at \n" + unik_fil)
                 open(unik_fil, "x")
@@ -286,22 +297,22 @@ def server():
                 # write to file as long as transmission isn't done and there is something in data.
                 with open(unik_fil, "ab") as skriv:
                     data = remote_client.recv(1500)
-
                     while not remote_client.local_header.get_fin() and data:
                         skriv.write(data)
                         data = remote_client.recv(1500)
+
                 # if we received a fin flag, we say goodbye
                 if remote_client.remote_header.get_fin():
                     remote_client.answer_fin()
                     print(f"saving file at\n{unik_fil}")
 
                 # we can infer that the transfer failed if we never got a fin flag,
-                # in that case we remove the half transfered file.
+                # in that case we remove the half transferred file.
                 else:
                     print("removing failed file")
                     os.remove(path)
 
-        # restarts server after an error ocurs
+        # restarts server after an error occurs
         time.sleep(3)
         server()
 

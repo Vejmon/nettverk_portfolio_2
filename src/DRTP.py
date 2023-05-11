@@ -26,8 +26,8 @@ def split_packet(data):
 
 
 # A_con Grunnklassen som har alt som er felles for de tre klassene,
+# used for establishing connections and comparing incoming headers and last sent headers.
 class A_Con:
-
     # used to transmit a JSON object to server,
     # letting server know about the client's -r, -f, -w and -t flag set by a client.
     def grab_json(self, file_name):
@@ -41,7 +41,7 @@ class A_Con:
         self.port = port
         self.window = window
         self.test = test
-        self.timeout = 2
+        self.timeout = 4
         self.previous_packet = HeaderWithBody(bytearray(12), None)  # previous packet sent from client
         self.local_header = HeaderWithBody(bytearray(12), None)  # header we are attempting to send now
         self.remote_header = Header(bytearray(12))  # response header from server
@@ -86,7 +86,6 @@ class A_Con:
         while True:
 
             self.con.settimeout(self.timeout)
-
             print("\nsending hello:")
             print(self.local_header)
 
@@ -96,9 +95,8 @@ class A_Con:
             # wait for a response from the server
             try:
                 data, addr = self.con.recvfrom(12)
-                # set timeout to four times the RTT
+                # set timeout to four times the measured RTT
                 time_received = time.time()
-
                 self.timeout = (time_received - time_sent) * 4
                 print(f"RTT is measured to:{time_received - time_sent}\ntimeout set to: {self.timeout}")
 
@@ -110,6 +108,7 @@ class A_Con:
                 counter += 1
                 print(f"didn't receive ack from server at: {self.raddr}:{self.port}")
 
+            # if we tried many times we give up establishing a connection
             if counter == 9:
                 print("couldn't establish connection, giving up")
                 sys.exit()
@@ -129,9 +128,9 @@ class A_Con:
         # set alle flag til 0
         self.local_header.set_flags("0000")
 
-    # a function to respond to the first connection from a client.
+    # a function to let server respond to the first connection from a client.
     def answer_hello(self):
-        # set wait timeout, set to rtt in future fix fix
+
         self.con.settimeout(self.timeout)
 
         # check that and syn flag is set in first packet.
@@ -149,17 +148,18 @@ class A_Con:
             # create empty packet
             packet = self.create_packet(b'')
 
-            # set empty data to silence warning
-
             # attempt to transmit an answer.
             counter = 0
             while True:
+                # grab the time we last sent a packet and send the packet
                 time_sent = time.time()
                 self.con.sendto(packet, (self.raddr, self.port))
 
                 try:
+                    # attempt to receive a packet from the client
                     data, addr = self.con.recvfrom(500)
                     self.remote_header, body = split_packet(data)
+
                     # set timeout to four times the RTT
                     time_received = time.time()
                     self.timeout = (time_received - time_sent) * 4
@@ -169,35 +169,40 @@ class A_Con:
                     if self.remote_header.get_syn():
                         print("got a syn packet, resending")
 
+                    # if we get an ack from the cilent the syn ack has been acked and client is ready to send packets.
                     elif self.remote_header.get_ack():
                         print("got an ack ready to receive packets")
                         break
 
+                    # if syn ack isn't set and packet contains a body,
+                    # we received the first packet and client is already sending packets.
                     elif body:
                         print("got first packet")
                         break
 
+                # we try a few times to establish a connection.
                 except TimeoutError:
                     print("timed out, resending")
 
                 counter += 1
-                # gir opp hvis vi har prøvd mange.
+                # gir opp hvis vi har prøvd mange ganger.
                 if counter > 9:
                     print(f'unable to establish connection with {self.raddr}:{self.port}')
                     return False
 
+            # set only the ack flag for future headers.
             print(self.remote_header)
             self.local_header.set_flags("0100")
             return True
 
+    # only stop wait uses this function anymore, but it's used to send a fin flag, and a fin ack from the server.
     def send_fin(self):
-
         # build a last packet with fin flag set
         self.local_header.set_fin(True)
         self.local_header.increment_seqed()
         self.con.settimeout(self.timeout)
         # send packet untill we get the "fin_ack"
-        for i in range(6):
+        for i in range(15):
 
             self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
             try:
@@ -217,11 +222,10 @@ class A_Con:
 
         print("never got a fin_ack, giving up")
 
+    # spams some fin flags back to client
     def answer_fin(self):
-
         print("sending fin_ack:\n" + self.local_header.__str__())
-        for i in range(5):
-            self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
+        self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
 
     def server_compare_headers(self):
         print("\nremote header")
@@ -483,7 +487,7 @@ class GoBackN(A_Con):
 
         # recieve packets in sequence and order until we have a fin flag.
         # quit if we don't receive a packet or the wrong packet to many times.
-        for i in range(6):
+        for i in range(15):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
@@ -519,25 +523,34 @@ class SelectiveRepeat(A_Con):
 
     # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
     # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
-
     def send_fin(self):
         self.local_header.set_fin(True)
         # send fin header, with a batch of packets
-        self.send(b'')
+        send_succesfull = self.send(b'')
+        # when send returns, the fin flag must be acked,
+        if send_succesfull:
+            print("received fin_ack")
+        else:
+            print("didn't get fin_ack")
+        return send_succesfull
 
+    # used for threading in selective repeat attempt to send a packet many times,
     def send_packet(self, pkt):
         # sends a packet, then sleeps and checks if an ack is received, if not we resend the packet
-        for i in range(20):
-            print(f"\nsending packet{pkt}")
+        for i in range(15):
+            # sending the packet
+            print(f"sending: {pkt}")
             self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
+            # wait for an amount of time set by the RTT of the network.
             time.sleep(self.timeout)
+            # if an ack is present we stop sending the packet.
             if pkt.get_seqed() in self.list_acked:
                 return
-            else:
-                print(f"\nack for packet not received, resending \n{pkt}")
+
         print(f"never got an ack for\n{pkt}\n giving up")
         self.still_sending = False
 
+    # return the last acked packet in sequence, example [1,2,3,5,6] returns 3
     def last_pkt_in_sequence(self):
         last_nr_in_sequence = 0
         self.list_acked.sort()
@@ -585,9 +598,7 @@ class SelectiveRepeat(A_Con):
         if not self.local_header.get_fin() and send_base <= a_packet.get_seqed() < send_baseN - 1:
             return True
 
-        print(f"sending packets: base:{send_base} baseN:{send_baseN}")
-        # send all the packets
-
+        print(f"adding packets to list of sending packets: base:{send_base} baseN:{send_baseN}")
         for pkt in self.list_local_headers:
             if pkt.get_seqed() not in self.list_sending_threads:
                 th.Thread(target=self.send_packet, args=(pkt,), daemon=True).start()
@@ -729,16 +740,18 @@ class SelectiveRepeat(A_Con):
 # a class to handle headers,
 # has many functions to grab and set different variables in the 12 bytes that is a header
 class Header:
+
     # used to print information about a header,
     def __str__(self):
         return '{"seqed": %s, "acked": %s, "syn": %s, "ack": %s, "fin": %s, "win": %s}' % \
             (self.seqed, self.acked, self.syn, self.ack, self.fin, self.win)
 
+    # used to initialize a header
     def __init__(self, header):
         self.seqed, self.acked, self.flags, self.win = self.parse_header(header)
         self.syn, self.ack, self.fin = self.parse_flags(self.flags)
 
-    # hacky løsning, liker ikke dette, fix fix
+    # our own version of parsing flags from a header
     def parse_flags(self, integer_4bit):
         integer_4bit = str(integer_4bit)
         if len(integer_4bit) < 4:
@@ -750,6 +763,7 @@ class Header:
         # print(f"ut: {syn}{ack}{fin}0")
         return syn, ack, fin
 
+    # used to grab the different segments of a header, flags are parsed again in parse_flags function
     def parse_header(self, header):
         # takes a header of 12 bytes as an argument,
         # unpacks the value based on the specified header_format
@@ -761,9 +775,12 @@ class Header:
         win = header_from_msg[3]
         return seqed, acked, flags, win
 
+    # used to return bytes from a header object, ready to be sent in a packet.
     def build_header(self):
         return pack(header_format, self.seqed, self.acked, self.get_flags(), self.win)
 
+    # takes a string to set the flags in a header.
+    # it's important to know which flag sits in which place, example: "1101" sets syn flag, ack and rst flags
     def set_flags(self, integer_4bit):
         integer_4bit = str(integer_4bit)
         if len(integer_4bit) < 4:
@@ -773,12 +790,14 @@ class Header:
         self.ack = int(integer_4bit[-3])
         self.fin = int(integer_4bit[-2])
 
+    # used to
     def get_flags(self):
         flags = str(self.syn) + str(self.ack) + str(self.fin) + "0"
         return int(flags)
 
     """
-    bare uinteressante getter/setter under her!
+    some rather uninteresting getters/setters function beneath.
+    at the bottom is a HeaderWithBody class, which inherits from the Header class, but can also cary a body
     """
 
     def increment_both(self):
@@ -837,11 +856,13 @@ class Header:
             self.syn = 0
 
 
+# inherits everythin in a header class, but is capable of delivering a body (payload) as well
 class HeaderWithBody(Header):
     def __init__(self, header, body):
         super().__init__(header)
         self.body = body
 
+    # returns a bytes object with a header first, and the headers body appended to the end.
     def complete_packet(self):
         if self.body:
             return self.build_header() + self.body
