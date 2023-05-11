@@ -266,12 +266,19 @@ class A_Con:
     def duplicate_ack(self, pkt):
         if self.test == "dupack" and pkt.get_seqed() == 2:
             # send an aditional ack
-            print(f"\n\nsending duplicate ack\n{pkt}\n\n")
+            print(f"\n\nsending duplicate ack!\n{pkt}\n\n")
             self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
 
     def skip_seq(self, pkt):
         if self.test == "skipseq" and pkt.get_seqed() == 2 and self.first_test:
             print(f"\n\nskiping sequence!\n{pkt}\n\n")
+            self.first_test = False
+            return True
+        return False
+
+    def skip_ack(self, pkt):
+        if self.test == "skipack" and pkt.get_seqed() == 2 and self.first_test:
+            print(f"\n\nskiping ack!\n{pkt}\n\n")
             self.first_test = False
             return True
         return False
@@ -317,7 +324,8 @@ class StopWait(A_Con):
 
     # Receive data, send ack: Server side
     def recv(self, chunk_size):
-        self.con.settimeout(self.timeout)
+        # set timeout to something arbitrarely big
+        self.con.settimeout(20)
 
         # recieve packets untill we have the one we are looking for.
         # quit if we never receive a packet.
@@ -333,19 +341,20 @@ class StopWait(A_Con):
                     self.local_header.set_fin(self.remote_header.get_fin())
 
                     # send ack of new packet
-                    self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
+                    if not self.skip_ack(self.local_header):
+                        self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
 
                     # send duplicate_ack for packet_nr 2 if flag is set
-
                     self.duplicate_ack(self.local_header)
                     return body
+
                 else:
                     # resend old ack
-                    print("resending old ack:\n" + self.local_header.__str__())
+                    print(f"got packet\n{self.remote_header}\nresending old ack:\n{self.local_header}")
                     self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
 
             except TimeoutError:
-                print("resending old ack:\n" + self.local_header.__str__())
+                print("timed out! resending old ack:\n" + self.local_header.__str__())
                 self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
 
         return None
@@ -517,10 +526,10 @@ class GoBackN(A_Con):
                 # if we got the correct packet, we increment our header, and return an ack.
                 if self.server_compare_headers():
 
-                    self.local_header.set_fin(self.remote_header.get_fin())
-                    self.local_header.increment_both()
-
-                    self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
+                    self.local_header.set_fin(self.remote_header.get_fin()),
+                    if not self.skip_ack(self.local_header):
+                        self.local_header.increment_both()
+                        self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
                     # send duplicate_ack for packet_nr 2 if flag is set
                     self.duplicate_ack(self.local_header)
                     return body
@@ -694,68 +703,68 @@ class SelectiveRepeat(A_Con):
         while True:
 
             print(f"base:{rcv_base}, baseN:{rcv_baseN}")
-
+            # litt mange indents
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 inn_header, body = split_packet(data)
                 header = HeaderWithBody(inn_header.build_header(), body)
                 print(f"\ngot packet:\n{header}")
 
-                # seq number is within the window the header is stored, and an ack is sent
-                if rcv_base <= header.get_seqed() < rcv_baseN:
-                    header.set_ack(True)
-                    header.set_acked(header.get_seqed())
+                if not self.skip_ack(header):
+                    # seq number is within the window the header is stored, and an ack is sent
+                    if rcv_base <= header.get_seqed() < rcv_baseN:
+                        header.set_ack(True)
+                        header.set_acked(header.get_seqed())
+                        if header.get_acked() not in self.list_acked:
+                            self.list_acked.append(header.get_acked())
+                            self.list_remote_headers.append(header)
 
-                    if header.get_acked() not in self.list_acked:
-                        self.list_acked.append(header.get_acked())
-                        self.list_remote_headers.append(header)
+                        # ACK is returned to the sender
+                        print(f"\nsending ack for:\n{header}")
+                        self.con.sendto(header.build_header(), (self.raddr, self.port))
+                        # send duplicate_ack for packet_nr 2 if flag is set
+                        self.duplicate_ack(header)
 
-                    # ACK is returned to the sender
-                    print(f"\nsending ack for:\n{header}")
-                    self.con.sendto(header.build_header(), (self.raddr, self.port))
-                    # send duplicate_ack for packet_nr 2 if flag is set
-                    self.duplicate_ack(header)
+                    # If seq = base, the window moves
+                    if header.get_seqed() == rcv_base:
+                        print("got first packet in window\nreturning bytes and moving window")
 
-                # If seq = base, the window moves
-                if header.get_seqed() == rcv_base:
-                    print("got first packet in window\nreturning bytes and moving window")
+                        # sort list of received packets in ascending order. and list of acks
+                        self.list_remote_headers.sort(key=HeaderWithBody.get_seqed)
+                        self.list_acked.sort()
 
-                    # sort list of received packets in ascending order. and list of acks
-                    self.list_remote_headers.sort(key=HeaderWithBody.get_seqed)
-                    self.list_acked.sort()
+                        # move window beyond last packet in sequence
+                        total_body = b''
+                        counter = 0
+                        for pkt in self.list_remote_headers:
+                            if pkt.get_seqed() == rcv_base + counter:
+                                if isinstance(pkt.body, bytes):
+                                    total_body += pkt.body
+                                self.local_header.set_fin(pkt.get_fin())
+                                self.remote_header.set_fin(pkt.get_fin())
+                                self.local_header.set_acked(pkt.get_seqed())
+                                counter = counter + 1
+                            else:
+                                break
 
-                    # move window beyond last packet in sequence
-                    total_body = b''
-                    counter = 0
-                    for pkt in self.list_remote_headers:
-                        if pkt.get_seqed() == rcv_base + counter:
-                            if isinstance(pkt.body, bytes):
-                                total_body += pkt.body
-                            self.local_header.set_fin(pkt.get_fin())
-                            self.remote_header.set_fin(pkt.get_fin())
-                            self.local_header.set_acked(pkt.get_seqed())
-                            counter = counter + 1
-                        else:
-                            break
+                        # remove items in list which are to be returned
+                        del self.list_remote_headers[:counter]
 
-                    # remove items in list which are to be returned
-                    del self.list_remote_headers[:counter]
+                        # return payload and get more packets
+                        return total_body
 
-                    # return payload and get more packets
-                    return total_body
+                    # seq nr is below base, we just ack the packet
+                    elif header.get_seqed() < rcv_base:
+                        # send an ACK even though this is a packet that the receiver has previously acknowledged
+                        header.set_acked(header.get_seqed())
+                        print(f"\nheader is below base, sending ack nonetheless:\n{header}")
+                        # returns only the twelve bytes in the header, the body is not sent back
+                        self.con.sendto(header.build_header(), (self.raddr, self.port))
 
-                # seq nr is below base, we just ack the packet
-                elif header.get_seqed() < rcv_base:
-                    # send an ACK even though this is a packet that the receiver has previously acknowledged
-                    header.set_acked(header.get_seqed())
-                    print(f"\nheader is below base, sending ack nonetheless:\n{header}")
-                    # returns only the twelve bytes in the header, the body is not sent back
-                    self.con.sendto(header.build_header(), (self.raddr, self.port))
-
-                # seq number is higher than the seq numbers in the window
-                else:
-                    # ignore the packet
-                    print(f"seqnr is ahead of window{header}")
+                    # seq number is higher than the seq numbers in the window
+                    else:
+                        # ignore the packet
+                        print(f"seqnr is ahead of window{header}")
 
             except AttributeError:
                 return False

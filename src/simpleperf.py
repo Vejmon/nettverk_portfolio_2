@@ -120,7 +120,7 @@ def get_args():
     parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open, default is 8088")
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
                        help="ipv4 adress to bind server to, default attempts to bind to local address")
-    parse.add_argument('-t', '--test', choices=['norm', 'skipack', 'skipseq', 'reorder', 'dupack'], default="norm",
+    parse.add_argument('-t', '--test', choices=['skipack', 'skipseq', 'reorder', 'dupack'], default="norm",
                        help="run tests on a server or client, loss drops some packets, "
                             "\nskipack skips acking some packets, skipseq skips a sequence nr. "
                             "\nReorder reorders the packets in a window only works with gbn and sr"
@@ -171,8 +171,8 @@ def client():
     # let server know we are trying to connect,
     # the argument in send_hello is the filename we are going to attempt to transmit
     method.send_hello(args.file.split('/')[-1])
-
-    print(f"test navn: {method.test}")
+    if method.test:
+        print(f"test navn: {method.test}")
 
     # grab the time we started sending packets
     time_start_sending = time.time()
@@ -275,7 +275,9 @@ def server():
             remote_client.set_con(serv_sock)
 
             # tell user about what kind of test is to be run
-            print(f"test navn: {remote_client.test}")
+            if remote_client.test:
+                print(f"test navn: {remote_client.test}")
+
             print("\nmottat header")
             print(remote_client.remote_header)
 
