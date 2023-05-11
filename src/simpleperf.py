@@ -94,12 +94,18 @@ def valid_file(name):
 # looked at how to perform this task on this site:
 # https://stackoverflow.com/questions/13852700/create-file-but-if-name-exists-add-number
 def get_save_file(path):
+    # get full filename
     file = path.split('/')[-1]
+    # seperate filename and extension
     filename, extension = os.path.splitext(file)
 
     counter = 1
+    # loop while a file exists
     while os.path.exists(path):
+        # filename size increases when numbers are added
         file = path.split('/')[-1]
+
+        # create a new name
         path = path[:-len(file)] + filename + "_" + str(counter) + extension
         counter += 1
     return path
@@ -109,9 +115,10 @@ def get_save_file(path):
 # the "help" message may be accessed by invoking the program with the -h flag
 def get_args():
     # start the argument parser
-    parse = argparse.ArgumentParser(prog="FileTransfer",
+    parse = argparse.ArgumentParser(prog="FileTransfer, made using python 3.10",
                                     description="transfer a chosen file between two hosts, uses UDP and "
-                                                "a custom protocol DRTP for reliable transfer.",
+                                                "a custom protocol DRTP for reliable transfer.\n"
+                                                "needs a file in the 'img' folder and the 'ut' folder to be present",
                                     epilog='simpleperf --help')
 
     # optional arguments, with long and short name, default values when needed, info for the help page
@@ -121,22 +128,23 @@ def get_args():
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
                        help="ipv4 adress to bind server to, default attempts to bind to local address")
     parse.add_argument('-t', '--test', choices=['skipack', 'skipseq', 'reorder', 'dupack'], default="norm",
-                       help="run tests on a server or client, loss drops some packets, "
-                            "\nskipack skips acking some packets, skipseq skips a sequence nr. "
-                            "\nReorder reorders the packets in a window only works with gbn and sr"
-                            "\ndupack duplicates an ack from server.")
+                       help="run tests on a server or client, loss drops some packets,"
+                            " skipack skips acking some packets, skipseq skips a sequence nr."
+                            " Reorder reorders the packets in a window only works with gbn and sr"
+                            " dupack duplicates an ack from server."
+                            " NOTE: requires filesize to be greater than 1460 Bytes")
 
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
-                       help="ipv4 address to connect with, default connects with node h1")
-    parse.add_argument('-f', '--file', type=valid_file, default="kameleon.jpg",  # alle_dyr.png
-                       help="specify a file in the img folder to transfer, defaults to supplied kameleon.jpg")
+                       help="ipv4 address to connect with, default connects with node h3 at 10.0.1.2")
+    parse.add_argument('-f', '--file', type=valid_file, default="alle_dyr.png",  # kameleon.jpg , sopp.jpg
+                       help="specify a file in the img folder to transfer, defaults to supplied alle_dyr.png")
     parse.add_argument('-r', '--reli', choices=['sw', 'sr', 'gbn'], default="sw",
                        help='choose which method used for reliable transfer, '
-                            'sw is stop wait, gbn is go back n, sr is selective repeat.')
+                            'sw is stop wait, gbn is go back n, sr is selective repeat. default is sw')
     parse.add_argument('-w', '--window', type=valid_window, default=5,
                        help='window size used for reliable transfer, when using "go back n" or "selective repeat"'
-                            'window size must be a positive integer')
+                            'window size must be a positive integer, default is five')
 
     # parse the arguments
     return parse.parse_args()
