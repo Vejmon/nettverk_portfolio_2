@@ -480,7 +480,6 @@ class GoBackN(A_Con):
         if not self.local_header.get_fin() and len(self.list_local_headers) < self.window:
             return True
 
-
         # attempt to send and receive acks, if no acks are present four times we give up.
         attempt_counter = 0
 
@@ -494,8 +493,8 @@ class GoBackN(A_Con):
             if not self.reorder():
                 for packet in self.list_local_headers:
                     if not self.skip_seq(packet):
-                            print(packet)
-                            self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
+                        print(packet)
+                        self.con.sendto(packet.complete_packet(), (self.raddr, self.port))
                 # attempt to receive acks also trims away acked, packets
             self.recv_acks()
 
@@ -546,17 +545,20 @@ class GoBackN(A_Con):
 
         return None
 
+    # grabs a window and sends the packets in reverse order.
     def reorder(self):
         if self.test == "reorder" and self.first_test:
+            # only perform the test once
             self.first_test = False
-            # sort the list of outgoing headers to be reversed upside down
             print("reordering\nsending packets:")
+            # sort the list of outgoing headers to be reversed order
             tmp_list = sorted(self.list_local_headers, key=HeaderWithBody.get_seqed, reverse=True)
+            # send the packets
             for pkt in tmp_list:
                 print(pkt)
                 self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
             return True
-
+        # transfer packets as usual
         return False
 
 
@@ -584,18 +586,21 @@ class SelectiveRepeat(A_Con):
             print("didn't get fin_ack")
         return send_succesfull
 
+    # grabs a window, and sends the packets in reverse order.
     def reorder(self):
         if self.test == "reorder" and self.first_test:
+            # perform the test only once
             self.first_test = False
             # sort the list of outgoing headers to be reversed upside down
             print("reordering\nsending packets:")
             # create a temporary inverted list
             tmp_list = sorted(self.list_local_headers, key=HeaderWithBody.get_seqed, reverse=True)
+            # send the packets
             for pkt in tmp_list:
                 print(pkt)
                 self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
             return True
-
+        # transfer windows as usual
         return False
 
     # used for threading in selective repeat attempt to send a packet many times,
