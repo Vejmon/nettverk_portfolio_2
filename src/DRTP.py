@@ -99,7 +99,7 @@ class A_Con:
                 # set timeout to four times the measured RTT
                 time_received = time.time()
                 self.timeout = (time_received - time_sent) * 4
-                print(f"RTT is measured to:{time_received - time_sent}\ntimeout set to: {self.timeout}")
+                print(f"RTT is measured to:{time_received - time_sent}s\ntimeout set to: {self.timeout}s")
 
                 # break out of loop if we got anything
                 self.remote_header, body = split_packet(data)
@@ -164,7 +164,7 @@ class A_Con:
                     # set timeout to four times the RTT
                     time_received = time.time()
                     self.timeout = (time_received - time_sent) * 4
-                    print(f"RTT is measured to be:{time_received - time_sent}\ntimeout set to{self.timeout}")
+                    print(f"RTT is measured to be:{time_received - time_sent}s\ntimeout set to{self.timeout}s")
 
                     # if we receive a syn packet again, respond again!
                     if self.remote_header.get_syn():
@@ -203,7 +203,7 @@ class A_Con:
         self.local_header.increment_seqed()
         self.con.settimeout(self.timeout)
         # send packet untill we get the "fin_ack"
-        for i in range(15):
+        for i in range(self.window * 2):
 
             self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
             try:
@@ -300,7 +300,7 @@ class StopWait(A_Con):
         pakke = self.local_header.complete_packet()
 
         # Try to send the packet 15 times
-        for i in range(15):
+        for i in range(self.window * 2):
 
             self.con.settimeout(self.timeout)  # Set timeout for resending packet
 
@@ -329,7 +329,7 @@ class StopWait(A_Con):
 
         # recieve packets untill we have the one we are looking for.
         # quit if we never receive a packet.
-        for i in range(15):
+        for i in range(self.window * 2):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
@@ -400,9 +400,6 @@ class GoBackN(A_Con):
         self.timeout = 1
         self.list_local_headers = []
         self.list_remote_headers = []
-
-    # Må hente header fra Header, henter funksjoner for sending og mottaking av pakker fra A_Con
-    # vil ha særgen funksjonalitet, f. eks. når det gjelder ACK
 
     def recv_acks(self):
 
@@ -519,7 +516,7 @@ class GoBackN(A_Con):
 
         # recieve packets in sequence and order until we have a fin flag.
         # quit if we don't receive a packet or the wrong packet to many times.
-        for i in range(15):
+        for i in range(self.window * 2):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
@@ -606,7 +603,7 @@ class SelectiveRepeat(A_Con):
     # used for threading in selective repeat attempt to send a packet many times,
     def send_packet(self, pkt):
         # sends a packet, then sleeps and checks if an ack is received, if not we resend the packet
-        for i in range(15):
+        for i in range(self.window * 2):
             # sending the packet
             if not self.skip_seq(pkt):
                 print(f"sending: {pkt}")

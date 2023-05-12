@@ -1,0 +1,141 @@
+python3 src/application.py -c -r sr -w 5
+
+sending hello:
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+RTT is measured to:0.035643815994262695s
+timeout set to: 0.14257526397705078s
+
+got ack from server:
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 1, "fin": 0, "win": 0}
+
+siste ack fra client:
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+performing test: norm
+adding packets to list of sending packets: base:1 baseN:6
+sending: {"seqed": 1, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+sending: {"seqed": 2, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+sending: {"seqed": 3, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+sending: {"seqed": 4, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+sending: {"seqed": 5, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 1, "acked": 1, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:2 baseN:7
+sending: {"seqed": 6, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:3 baseN:8
+sending: {"seqed": 7, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:4 baseN:9
+sending: {"seqed": 8, "acked": 3, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:5 baseN:10
+sending: {"seqed": 9, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:6 baseN:11
+sending: {"seqed": 10, "acked": 5, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:7 baseN:12
+sending: {"seqed": 11, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:8 baseN:13
+sending: {"seqed": 12, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:9 baseN:14
+sending: {"seqed": 13, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:10 baseN:15
+sending: {"seqed": 14, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:11 baseN:16
+sending: {"seqed": 15, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:12 baseN:17
+sending: {"seqed": 16, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:13 baseN:18
+sending: {"seqed": 17, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:14 baseN:19
+sending: {"seqed": 18, "acked": 13, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 14, "acked": 14, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:15 baseN:20
+sending: {"seqed": 19, "acked": 14, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 15, "acked": 15, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:16 baseN:21
+sending: {"seqed": 20, "acked": 15, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 16, "acked": 16, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:17 baseN:22
+sending: {"seqed": 21, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 17, "acked": 17, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:18 baseN:23
+sending: {"seqed": 22, "acked": 17, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 18, "acked": 18, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:19 baseN:24
+sending: {"seqed": 23, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+got an ack:
+{"seqed": 19, "acked": 19, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+adding packets to list of sending packets: base:20 baseN:25
+sending: {"seqed": 24, "acked": 19, "syn": 0, "ack": 0, "fin": 1, "win": 0}
+
+got an ack:
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first ack in window
+received fin_ack
+total transfer time: 0.144s
+total file size: 32.746KB
+acheived rate: 227.694KB/s

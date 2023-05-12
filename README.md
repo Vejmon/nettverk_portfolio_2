@@ -1,5 +1,7 @@
-This project consist of two programs, a modified version of simpleperf using UDP,
+This project consist of two programs, a modified version of simpleperf using UDP called 'application',
 and a protocol called DRTP used to reliably transmit the packages.
+application now also transmits an image with a few different methods of reliable transfer
+rather than trying to measure the bandwidth between two hosts
 
 A client transmits an image from the 'img' folder.
 Then a copy of the image is stored at the server in a folder called 'ut'.
@@ -15,8 +17,8 @@ The method for reliable transfer is decided when running a client. There are thr
 A server version of the program is invoked as follows, if the program is run in mininet, 
 the program usually finds the local ipv4 address at that node:
 
-    $ python3 simpleperf.py -s    (attempts to open a connection to local ipv4 address at port 8088)
-    $ python3 simpleperf.by -s -b <ipv4_address> -p <port>
+    $ python3 application.py -s    (attempts to open a connection to local ipv4 address at port 8088)
+    $ python3 application.by -s -b <ipv4_address> -p <port>
 
 When a client connects, it will advertise the following to the server:
 
@@ -34,12 +36,12 @@ if not specified otherwise with the '-I, --serverip' flag,
 the client attempts to connect with node h3 if not otherwise specified.
 the client can be invoked as follows:
 
-    $ python3 simpleperf.py -c  (starts a connection to h3 at port 8088 and transmitt alle_dyr.png, with stop wait)
-    $ python3 simpleperf.py -c -I <server_ip> -t <test_name> -f <file_in_img> -p <port> -r <method> -w <window_size>
+    $ python3 application.py -c  (starts a connection to h3 at port 8088 and transmitt alle_dyr.png, with stop wait)
+    $ python3 application.py -c -I <server_ip> -t <test_name> -f <file_in_img> -p <port> -r <method> -w <window_size>
 
 There is also a help page in the program, if invoked as follows:
 
-    $ python3 simpleperf.py -h
+    $ python3 application.py -h
 
 Will print a message to screen about what inputs are allowed and how they work. 
 
@@ -58,6 +60,6 @@ required filesystem to run the program:
     │   └── sopp.jpg
     ├── src
     │   ├── DRTP.py
-    │   └── simpleperf.py
+    │   └── application.py
     ├── topo.py
     └── ut

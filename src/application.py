@@ -115,7 +115,8 @@ def get_save_file(path):
 # the "help" message may be accessed by invoking the program with the -h flag
 def get_args():
     # start the argument parser
-    parse = argparse.ArgumentParser(prog="FileTransfer application, made using python 3.10",
+    parse = argparse.ArgumentParser(prog="FileTransfer application, made using python 3.10, "
+                                         "intended to run on end hosts in a mininet network",
                                     description="transfer a chosen file between two hosts, uses UDP and "
                                                 "a custom protocol DRTP for reliable transfer.\n"
                                                 "needs a file in the 'img' folder and the 'ut' folder to be present",
@@ -189,7 +190,6 @@ def client():
     # 'rb' is read, bytes so the file is opened and read as bytes, we read 1460 bytes at a time,
     # unless there aren't enough bytes left
     with open(args.file, 'rb') as fil:
-        fil_size = fil.__sizeof__() / 1000
         # if last sending wasn't succesfull we quit.
         send_succesfull = True
         chunk = fil.read(1460)
@@ -200,6 +200,7 @@ def client():
 
     # if we got this far and transfering bytes was a success, we send a last packet with the fin flag, else we quit.
     if send_succesfull:
+        fil_size = os.path.getsize(args.file) / 1000
         method.send_fin()
         total_transfer_time = time.time() - time_start_sending
         str_total_time = "%.3fs" % total_transfer_time
