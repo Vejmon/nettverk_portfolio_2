@@ -793,7 +793,7 @@ class SelectiveRepeat(A_Con):
                         self.con.sendto(header.build_header(), (self.raddr, self.port))
 
                     # seq number is higher than the seq numbers in the window
-                    else:
+                    elif rcv_baseN <= header.get_seqed():
                         # ignore the packet
                         print(f"seqnr is ahead of window{header}")
 
