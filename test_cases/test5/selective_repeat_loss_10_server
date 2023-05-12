@@ -1,0 +1,241 @@
+server at 10.0.1.2:8088 is ready to receive
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+
+mottat header
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+sendt header
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 1, "fin": 0, "win": 0}
+RTT is measured to be:0.010546684265136719s
+timeout set to0.042186737060546875s
+got an ack ready to receive packets
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+making empty file at 
+/home/iwee/pyPro/2_portfolio/ut/alle_dyr_5.png
+base:1, baseN:6
+
+got packet:
+{"seqed": 1, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 1, "acked": 1, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:2, baseN:7
+
+got packet:
+{"seqed": 2, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:3, baseN:8
+
+got packet:
+{"seqed": 3, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:4, baseN:9
+
+got packet:
+{"seqed": 4, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:5, baseN:10
+
+got packet:
+{"seqed": 7, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+base:5, baseN:10
+
+got packet:
+{"seqed": 8, "acked": 3, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+base:5, baseN:10
+
+got packet:
+{"seqed": 9, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+base:5, baseN:10
+
+got packet:
+{"seqed": 5, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:6, baseN:11
+
+got packet:
+{"seqed": 6, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:10, baseN:15
+
+got packet:
+{"seqed": 9, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+header is below base, sending ack nonetheless:
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+base:10, baseN:15
+
+got packet:
+{"seqed": 10, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:11, baseN:16
+
+got packet:
+{"seqed": 12, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+base:11, baseN:16
+
+got packet:
+{"seqed": 11, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:13, baseN:18
+
+got packet:
+{"seqed": 13, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:14, baseN:19
+
+got packet:
+{"seqed": 15, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 15, "acked": 15, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+base:14, baseN:19
+
+got packet:
+{"seqed": 16, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 16, "acked": 16, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+base:14, baseN:19
+
+got packet:
+{"seqed": 17, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 17, "acked": 17, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+base:14, baseN:19
+
+got packet:
+{"seqed": 18, "acked": 13, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 18, "acked": 18, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+base:14, baseN:19
+
+got packet:
+{"seqed": 14, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 14, "acked": 14, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:19, baseN:24
+
+got packet:
+{"seqed": 19, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 19, "acked": 19, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:20, baseN:25
+
+got packet:
+{"seqed": 20, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:21, baseN:26
+
+got packet:
+{"seqed": 21, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 21, "acked": 21, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:22, baseN:27
+
+got packet:
+{"seqed": 22, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 22, "acked": 22, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+base:23, baseN:28
+
+got packet:
+{"seqed": 24, "acked": 19, "syn": 0, "ack": 0, "fin": 1, "win": 0}
+
+sending ack for:
+{"seqed": 24, "acked": 24, "syn": 0, "ack": 1, "fin": 1, "win": 0}
+base:23, baseN:28
+
+got packet:
+{"seqed": 20, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+header is below base, sending ack nonetheless:
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+base:23, baseN:28
+
+got packet:
+{"seqed": 22, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+header is below base, sending ack nonetheless:
+{"seqed": 22, "acked": 22, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+base:23, baseN:28
+
+got packet:
+{"seqed": 23, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending ack for:
+{"seqed": 23, "acked": 23, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+got first packet in window
+returning bytes and moving window
+sending fin_ack:
+{"seqed": 0, "acked": 24, "syn": 0, "ack": 1, "fin": 1, "win": 0}
+saving file at
+/home/iwee/pyPro/2_portfolio/ut/alle_dyr_5.png
+server at 10.0.1.2:8088 is ready to receive
+got an old header, sending an ack
+{"seqed": 20, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+server at 10.0.1.2:8088 is ready to receive
+Keyboard interrupt recieved, exiting server

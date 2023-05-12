@@ -1,0 +1,198 @@
+server at 10.0.1.2:8088 is ready to receive
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+
+mottat header
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+sendt header
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 1, "fin": 0, "win": 0}
+RTT is measured to be:0.010500192642211914s
+timeout set to0.042000770568847656s
+got an ack ready to receive packets
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+making empty file at 
+/home/iwee/pyPro/2_portfolio/ut/alle_dyr.png
+
+remote header
+{"seqed": 1, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 2, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 1, "acked": 1, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 5, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+sjekk headers Server
+prøver igjen
+prøver igjen
+
+remote header
+{"seqed": 3, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 4, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 5, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 6, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 7, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 8, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 9, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 10, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 11, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+prøver igjen
+
+remote header
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 13, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 14, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 15, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 14, "acked": 14, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 16, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 15, "acked": 15, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 17, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 16, "acked": 16, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 18, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 17, "acked": 17, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 19, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 18, "acked": 18, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 20, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 19, "acked": 19, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 21, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+prøver igjen
+
+remote header
+{"seqed": 22, "acked": 21, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 21, "acked": 21, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 23, "acked": 21, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 22, "acked": 22, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+
+remote header
+{"seqed": 24, "acked": 21, "syn": 0, "ack": 0, "fin": 1, "win": 0}
+local header
+{"seqed": 23, "acked": 23, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+godkjent
+sending fin_ack:
+{"seqed": 24, "acked": 24, "syn": 0, "ack": 1, "fin": 1, "win": 0}
+saving file at
+/home/iwee/pyPro/2_portfolio/ut/alle_dyr.png
+server at 10.0.1.2:8088 is ready to receive
+Keyboard interrupt recieved, exiting server
