@@ -288,7 +288,6 @@ class StopWait(A_Con):
 
     def __init__(self, laddr, raddr, port, window, test):
         super().__init__(laddr, raddr, port, window, test)
-        self.window = 1
         self.local_header = HeaderWithBody(bytearray(12), None)
         self.remote_header = HeaderWithBody(bytearray(12), None)
 
@@ -428,12 +427,13 @@ class GoBackN(A_Con):
         # find index of item "behind" last acked packet
         index = 0
         for pkt in self.list_local_headers:
-            index += 1
             if pkt.get_seqed() == largest_ack:
+                index = self.list_local_headers.index(pkt)
+                self.remote_header.set_fin(pkt.get_fin())
                 break
 
         # remove packets before last incorrectly received packet
-        del self.list_local_headers[0:index]
+        del self.list_local_headers[:index]
         # print the remainder if there are any packets
         if self.list_local_headers:
             print("packets remaining in window")
@@ -456,13 +456,6 @@ class GoBackN(A_Con):
         self.local_header.set_fin(True)
         # add empty packet to
         self.send(b'')
-
-        try:
-            data, addr = self.con.recvfrom(12)
-            header, body = split_packet(data)
-            print(f"fin_ack:\n{header}")
-        except TimeoutError:
-            print("didn't receive fin_ack:\nquitting")
 
     def send(self, data):
 
@@ -506,9 +499,15 @@ class GoBackN(A_Con):
                     not self.list_local_headers[len(self.list_local_headers) - 1].get_fin():
                 return True
 
+            if self.remote_header.get_fin():
+                print("got fin_ack exiting")
+                return True
+
             # if we receive no acks in four attempts, we quit
-            if attempt_counter == 4:
+            if attempt_counter == 9:
                 return False
+
+
 
     def recv(self, chunk_size):
         # Timeout
@@ -516,18 +515,18 @@ class GoBackN(A_Con):
 
         # recieve packets in sequence and order until we have a fin flag.
         # quit if we don't receive a packet or the wrong packet to many times.
-        for i in range(self.window * 2):
+        for i in range(self.window * 4):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
                 # if we got the correct packet, we increment our header, and return an ack.
                 if self.server_compare_headers():
+                    self.local_header.set_fin(self.remote_header.get_fin())
+                    # send duplicate_ack for packet_nr 2 if flag is set
 
-                    self.local_header.set_fin(self.remote_header.get_fin()),
                     if not self.skip_ack(self.local_header):
                         self.local_header.increment_both()
                         self.con.sendto(self.local_header.complete_packet(), (self.raddr, self.port))
-                    # send duplicate_ack for packet_nr 2 if flag is set
                     self.duplicate_ack(self.local_header)
                     return body
                 else:

@@ -174,7 +174,7 @@ def client():
                                       args.port, args.window, args.test)
     else:
         method = DRTP.StopWait(args.bind, args.serverip,
-                               args.port, 1, args.test)
+                               args.port, args.window, args.test)
     # binds UDP connection to local ipv4 address and port.
     method.bind_con()
 
@@ -234,6 +234,7 @@ def server():
                     print(f"got an old header, sending an ack\n{header}")
                     header.set_acked(header.get_seqed())
                     header.set_ack(True)
+                    header.set_fin(header.get_fin())
                     serv_sock.sendto(header.build_header(), addr)
                     serv_sock.close()
                     break
