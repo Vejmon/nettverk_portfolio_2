@@ -327,7 +327,6 @@ def server():
                     os.remove(path)
 
         # restarts server after an error occurs
-        time.sleep(3)
         server()
 
 

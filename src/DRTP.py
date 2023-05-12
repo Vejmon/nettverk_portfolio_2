@@ -203,7 +203,7 @@ class A_Con:
         self.local_header.increment_seqed()
         self.con.settimeout(self.timeout)
         # send packet untill we get the "fin_ack"
-        for i in range(self.window * 2):
+        for i in range(self.window * 5):
 
             self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
             try:
@@ -298,8 +298,8 @@ class StopWait(A_Con):
         self.local_header.body = data
         pakke = self.local_header.complete_packet()
 
-        # Try to send the packet 15 times
-        for i in range(self.window * 2):
+        # Try to send the packet many times
+        for i in range(self.window * 5):
 
             self.con.settimeout(self.timeout)  # Set timeout for resending packet
 
@@ -328,7 +328,7 @@ class StopWait(A_Con):
 
         # recieve packets untill we have the one we are looking for.
         # quit if we never receive a packet.
-        for i in range(self.window * 2):
+        for i in range(self.window * 5):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
@@ -414,12 +414,13 @@ class GoBackN(A_Con):
                 break
 
         # grab largest ack from list of received packets
-        largest_ack = 0
+        largest_ack = self.local_header.get_acked()
         print("\nreceived packets:")
         for packet in self.list_remote_headers:
             print(packet)
             if packet.get_acked() > largest_ack:
                 largest_ack = packet.get_acked()
+                self.local_header.set_acked(largest_ack)
 
         self.list_remote_headers.clear()
         print(f"\nbiggest ack received: {largest_ack}")
@@ -517,7 +518,7 @@ class GoBackN(A_Con):
 
         # recieve packets in sequence and order until we have a fin flag.
         # quit if we don't receive a packet or the wrong packet to many times.
-        for i in range(self.window * 4):
+        for i in range(self.window * 10):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
@@ -604,7 +605,7 @@ class SelectiveRepeat(A_Con):
     # used for threading in selective repeat attempt to send a packet many times,
     def send_packet(self, pkt):
         # sends a packet, then sleeps and checks if an ack is received, if not we resend the packet
-        for i in range(self.window * 2):
+        for i in range(self.window * 5):
             # sending the packet
             if not self.skip_seq(pkt):
                 print(f"sending: {pkt}")
