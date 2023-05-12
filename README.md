@@ -50,6 +50,7 @@ since all tests are run on the second packet, reordering also requires two packe
 reordering is therefore performed on the first available window, 
 
 NOTE: the specified window must be smaller than the requested file when using reorder or the test will fail
+example: if running with a window size of 7, the file size must be more than 7*1460=10220 bytes for the test to function.
 
 required filesystem to run the program:
 
