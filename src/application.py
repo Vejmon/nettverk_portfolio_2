@@ -128,12 +128,13 @@ def get_args():
     parse.add_argument('-p', '--port', type=valid_port, default=8088, help="which port to bind/open, default is 8088")
     parse.add_argument('-b', '--bind', type=valid_ip, default=get_ip(),  # attempts to grab ip from ifconfig
                        help="ipv4 adress to bind server to, default attempts to bind to local address")
-    parse.add_argument('-t', '--test', choices=['skipack', 'skipseq', 'reorder', 'dupack'], default="norm",
-                       help="run tests on a server or client, loss drops some packets,"
-                            " skipack skips acking some packets, skipseq skips a sequence nr."
-                            " Reorder reorders the packets in a window only works with gbn and sr"
-                            " dupack duplicates an ack from server."
-                            " NOTE: requires filesize to be greater than 1460 Bytes")
+    parse.add_argument('-t', '--test', choices=['skipack', 'skipseq', 'reorder', 'dupack'], default="",
+                       help="run tests on a server or client,"
+                            " skipack skips acking the second packet, skipseq skips the second sequence nr."
+                            " Reorder reorders the packets in the first window only, works with gbn and sr"
+                            " dupack duplicates the second ack from server."
+                            " NOTE: requires filesize to be greater than 1460 Bytes, "
+                            " or a full window when running reorder")
 
     # client arguments ignored if running a server
     parse.add_argument('-I', '--serverip', type=valid_ip, default="10.0.1.2",  # default value is set to node h3
