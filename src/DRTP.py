@@ -433,7 +433,9 @@ class GoBackN(A_Con):
                 break
 
         # remove packets before last incorrectly received packet
-        del self.list_local_headers[:index]
+        # shouldn't remove packets if index is 0
+        if index:
+            del self.list_local_headers[:index + 1]
         # print the remainder if there are any packets
         if self.list_local_headers:
             print("packets remaining in window")
