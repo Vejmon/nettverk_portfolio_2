@@ -1,0 +1,428 @@
+server at 10.0.1.2:8088 is ready to receive
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+performing test: dupack
+
+mottat header
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+sendt header
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 1, "fin": 0, "win": 0}
+RTT is measured to be:0.010298967361450195s
+timeout set to0.04119586944580078s
+got an ack ready to receive packets
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+making empty file at 
+/home/iwee/pyPro/2_portfolio/ut/alle_dyr_12.png
+
+remote header
+{"seqed": 1, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 2, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 1, "acked": 1, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+
+sending duplicate ack!
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+
+
+remote header
+{"seqed": 3, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 3, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 3, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 4, "acked": 3, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 4, "acked": 3, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 4, "acked": 3, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 5, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 5, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 5, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 6, "acked": 5, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 6, "acked": 5, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 6, "acked": 5, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 7, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 7, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 7, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 8, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 8, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 8, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 9, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 9, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 9, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 10, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 10, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 10, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 13, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 13, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 13, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 14, "acked": 13, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 14, "acked": 13, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 14, "acked": 14, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 14, "acked": 13, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 14, "acked": 14, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 15, "acked": 14, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 14, "acked": 14, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 15, "acked": 14, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 15, "acked": 15, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 15, "acked": 14, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 15, "acked": 15, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 16, "acked": 15, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 15, "acked": 15, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 16, "acked": 15, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 16, "acked": 16, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 16, "acked": 15, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 16, "acked": 16, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 17, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 16, "acked": 16, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 17, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 17, "acked": 17, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 17, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 17, "acked": 17, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 18, "acked": 17, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 17, "acked": 17, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 18, "acked": 17, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 18, "acked": 18, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 18, "acked": 17, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 18, "acked": 18, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 19, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 18, "acked": 18, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 19, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 19, "acked": 19, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 19, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 19, "acked": 19, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 20, "acked": 19, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 19, "acked": 19, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 20, "acked": 19, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 20, "acked": 19, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 21, "acked": 20, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 21, "acked": 20, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 21, "acked": 21, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 21, "acked": 20, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 21, "acked": 21, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 22, "acked": 21, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 21, "acked": 21, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 22, "acked": 21, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 22, "acked": 22, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 22, "acked": 21, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 22, "acked": 22, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 23, "acked": 22, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 22, "acked": 22, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+
+remote header
+{"seqed": 23, "acked": 22, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+local header
+{"seqed": 23, "acked": 23, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+sjekk headers Server
+
+got packet
+{"seqed": 23, "acked": 22, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+resending old ack:
+{"seqed": 23, "acked": 23, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 24, "acked": 23, "syn": 0, "ack": 0, "fin": 1, "win": 0}
+local header
+{"seqed": 23, "acked": 23, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+godkjent
+
+sending fin_ack:
+{"seqed": 24, "acked": 24, "syn": 0, "ack": 1, "fin": 1, "win": 0}
+saving file at
+/home/iwee/pyPro/2_portfolio/ut/alle_dyr_12.png
+server at 10.0.1.2:8088 is ready to receive
+got an old header, sending an ack
+{"seqed": 24, "acked": 23, "syn": 0, "ack": 0, "fin": 1, "win": 0}
+server at 10.0.1.2:8088 is ready to receive
+Keyboard interrupt recieved, exiting server

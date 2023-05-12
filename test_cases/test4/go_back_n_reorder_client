@@ -1,0 +1,117 @@
+python3 src/application.py -c -t reorder -r gbn
+
+sending hello:
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+RTT is measured to:0.010468006134033203s
+timeout set to: 0.04187202453613281s
+
+got ack from server:
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 1, "fin": 0, "win": 0}
+
+siste ack fra client:
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+performing test: reorder
+
+sending packets:
+reordering
+sending packets:
+{"seqed": 5, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 4, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 3, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 2, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 1, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+received packets:
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 1, "acked": 1, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+biggest ack received: 1
+packets remaining in window
+{"seqed": 2, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 3, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 4, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 5, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+sending packets:
+{"seqed": 2, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 3, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 4, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 5, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 6, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+received packets:
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+biggest ack received: 6
+
+sending packets:
+{"seqed": 7, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 8, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 9, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 10, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 11, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+received packets:
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+biggest ack received: 11
+
+sending packets:
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 13, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 14, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 15, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 16, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+received packets:
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 14, "acked": 14, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 15, "acked": 15, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 16, "acked": 16, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+biggest ack received: 16
+
+sending packets:
+{"seqed": 17, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 18, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 19, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 20, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 21, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+
+received packets:
+{"seqed": 17, "acked": 17, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 18, "acked": 18, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 19, "acked": 19, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 21, "acked": 21, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+biggest ack received: 21
+
+sending packets:
+{"seqed": 22, "acked": 21, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 23, "acked": 21, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+{"seqed": 24, "acked": 21, "syn": 0, "ack": 0, "fin": 1, "win": 0}
+
+received packets:
+{"seqed": 22, "acked": 22, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 23, "acked": 23, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+{"seqed": 24, "acked": 24, "syn": 0, "ack": 1, "fin": 1, "win": 0}
+
+biggest ack received: 24
+fin_ack:
+{"seqed": 24, "acked": 24, "syn": 0, "ack": 1, "fin": 1, "win": 0}
+total transfer time: 0.063s
+total file size: 32.746KB
+acheived rate: 516.747KB/s
