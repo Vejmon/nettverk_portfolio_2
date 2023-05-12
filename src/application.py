@@ -115,11 +115,11 @@ def get_save_file(path):
 # the "help" message may be accessed by invoking the program with the -h flag
 def get_args():
     # start the argument parser
-    parse = argparse.ArgumentParser(prog="FileTransfer, made using python 3.10",
+    parse = argparse.ArgumentParser(prog="FileTransfer application, made using python 3.10",
                                     description="transfer a chosen file between two hosts, uses UDP and "
                                                 "a custom protocol DRTP for reliable transfer.\n"
                                                 "needs a file in the 'img' folder and the 'ut' folder to be present",
-                                    epilog='simpleperf --help')
+                                    epilog='application.py --help')
 
     # optional arguments, with long and short name, default values when needed, info for the help page
     parse.add_argument('-s', '--server', action='store_true', help='enables server mode')
@@ -153,7 +153,7 @@ def get_args():
 # grab arguments from user
 args = get_args()
 
-# an instance of simpleperf may only be server or client, this functions as a xor operator
+# an instance of the application may only be server or client, this functions as a xor operator
 if not (args.server ^ args.client):
     raise AttributeError("you must run either in server or client mode")
 
