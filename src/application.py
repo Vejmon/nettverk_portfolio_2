@@ -187,7 +187,7 @@ def client():
     # grab the time we started sending packets
     time_start_sending = time.time()
 
-    # sender pakker så lenge det fins deler å lese og forige sending gikk bra
+    # send packets as long as there are parts to read and last sending was successful 
     # 'rb' is read, bytes so the file is opened and read as bytes, we read 1460 bytes at a time,
     # unless there aren't enough bytes left
     with open(args.file, 'rb') as fil:
@@ -295,16 +295,16 @@ def server():
             # start over if the remote client doesn't respond to our answer
             if remote_client.answer_hello():
 
-                # lager en fil fil i ut mappen
+                # make a 'fil' file in folder names 'ut'
                 filnavn = en_client['fil']
                 absolute = os.path.abspath(os.path.dirname(__file__))
-                # går tilbake fra src mappen
+                # go back to src folder
                 absolute = absolute[:-4]
-                # hopper inn i ut mappen
+                # go to 'ut' folder
                 path = absolute + f"/ut/{filnavn}"
-                # hvis filen fins, inkrementerer med 1
+                # if the filename exists, increment by 1 in the name
                 unik_fil = get_save_file(path)
-                # lager en tom fil.
+                # make an empty file
                 print("making empty file at \n" + unik_fil)
                 open(unik_fil, "x")
 
