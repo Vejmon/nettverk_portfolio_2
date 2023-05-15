@@ -275,25 +275,28 @@ class A_Con:
             print(f"\n\nsending duplicate ack!\n{pkt}\n\n")
             self.con.sendto(pkt.complete_packet(), (self.raddr, self.port))
 
-    # skip a sequence number
+    # skip a sequence number at the client side
     def skip_seq(self, pkt):
-        if self.test == "skipseq" and pkt.get_seqed() == 2 and self.first_test: #first_test makes sure that the test only runs once
+        if self.test == "skipseq" and pkt.get_seqed() == 2 and self.first_test:
             print(f"\n\nskiping sequence!\n{pkt}\n\n")
+            # first_test makes sure that the test only runs once
             self.first_test = False
             return True
         return False
 
-    # skip an ack
+    # skip an ack at the server side
     def skip_ack(self, pkt):
-        if self.test == "skipack" and pkt.get_seqed() == 2 and self.first_test: #first_test makes sure that the test only runs once
+        if self.test == "skipack" and pkt.get_seqed() == 2 and self.first_test:
             print(f"\n\nskiping ack!\n{pkt}\n\n")
+            # first_test makes sure that the test only runs once
             self.first_test = False
             return True
         return False
 
 
-# Reliable method Stop-and-Wait
-# Uses functions for sending and receiving packets from A_Con
+# our implementation for the reliable method Stop-and-Wait,
+# inherits some usefull functions and variables from the A_Con class,
+# contains both server and client side functions.
 class StopWait(A_Con):
 
     def __init__(self, laddr, raddr, port, window, test):
@@ -301,23 +304,24 @@ class StopWait(A_Con):
         self.local_header = HeaderWithBody(bytearray(12), None)
         self.remote_header = HeaderWithBody(bytearray(12), None)
 
-    # Send data, receive ack: Client side
+    # Send data, receive ack: Client side, data must be byte like object.
     def send(self, data):
-
+        # builds the next header and append a body with the data to the end of it.
         self.local_header.increment_seqed()
         self.local_header.body = data
         pakke = self.local_header.complete_packet()
 
+        self.con.settimeout(self.timeout)  # Set timeout for resending packet
+
         # Try to send the packet many times
         for i in range(self.window * 5):
-
-            self.con.settimeout(self.timeout)  # Set timeout for resending packet
 
             # check if we should run skipseq test
             if not self.skip_seq(self.local_header):
                 self.con.sendto(pakke, (self.raddr, self.port))
 
             try:
+                # attempt to receive an ack from the server.
                 remote_data, addr = self.con.recvfrom(50)
                 self.remote_header, body = split_packet(remote_data)
                 if self.client_compare_headers():  # Checks that ack flag is set and acked equals sequed
@@ -333,10 +337,10 @@ class StopWait(A_Con):
 
     # Receive data, send ack: Server side
     def recv(self, chunk_size):
-        # set timeout to something arbitrarely big
+        # set timeout to something arbitrarily big
         self.con.settimeout(20)
 
-        # recieve packets untill we have the one we are looking for.
+        # receive packets until we got a fin flag.
         # quit if we never receive a packet.
         for i in range(self.window * 5):
             try:
@@ -368,10 +372,12 @@ class StopWait(A_Con):
 
         return None
 
-# Reliable method Go-Back-N
-# Uses functions for sending and receiving packets from A_Con
-class GoBackN(A_Con):
 
+# Reliable method Go-Back-N, contains both server and client side functions.
+# inherits some useful functions and variables from the A_Con class.
+class GoBackN(A_Con):
+    # compare an incomming header at the server side, returns true if the header is the next expected one.
+    # if not return a ack for the last received packet.
     def server_compare_headers(self):
         print("\nremote header")
         print(self.remote_header.__str__())
@@ -386,6 +392,7 @@ class GoBackN(A_Con):
         print("Check header Server")
         return False
 
+    # compare an incomming ack the client side.
     def client_compare_headers(self):
         print("\nremote header")
         print(self.remote_header.__str__())
@@ -408,7 +415,7 @@ class GoBackN(A_Con):
         self.list_local_headers = []
         self.list_remote_headers = []
 
-    # Function for prosessing ack received from server
+    # Function for prosessing acks received from server
     def recv_acks(self):
         self.con.settimeout(self.timeout)
         # receive packets if we timeout we stop receiving and look at what we got.
@@ -430,6 +437,7 @@ class GoBackN(A_Con):
                 largest_ack = packet.get_acked()
                 self.local_header.set_acked(largest_ack)
 
+        # remove the old acks.
         self.list_remote_headers.clear()
         print(f"\nbiggest ack received: {largest_ack}")
 
@@ -462,14 +470,15 @@ class GoBackN(A_Con):
         else:
             return False
 
-    # Send fin flag
+    # send fin flag with other packets in a window
     def send_fin(self):
         # set fin flag in local header
         self.local_header.set_fin(True)
         # add empty packet to
         self.send(b'')
 
-    # Sender's actions
+    # Builds a window containing headers and their bodies with data from the file.
+    # attempts to transfer the whole window, and then receives acks with the recv_acks function.
     def send(self, data):
 
         # set seq and create a packet with data ready to be sent.
@@ -520,15 +529,15 @@ class GoBackN(A_Con):
             if attempt_counter == 9:
                 return False
 
-
-    # Receiver's actions
+    # receives packets from the client, expects them to come in sequence, and appends the packets to a file,
+    # returns False if the transferring of bytes has failed.
     def recv(self, chunk_size):
-        # Timeout
-        self.con.settimeout(self.timeout)
+        # set timeout to somthing arbitrarily big
+        self.con.settimeout(self.timeout * 4)
 
         # recieve packets in sequence and order until we have a fin flag.
         # quit if we don't receive a packet or the wrong packet to many times.
-        for i in range(self.window * 10):
+        for i in range(self.window * 3):
             try:
                 data, addr = self.con.recvfrom(chunk_size)
                 self.remote_header, body = split_packet(data)
@@ -555,6 +564,7 @@ class GoBackN(A_Con):
         return None
 
     # grabs a window and sends the packets in reverse order.
+    # didd't make sense to build in the A_Con class, it doesn't have a list of headers nor does it have a window
     def reorder(self):
         if self.test == "reorder" and self.first_test:
             # only perform the test once
@@ -570,8 +580,9 @@ class GoBackN(A_Con):
         # transfer packets as usual
         return False
 
-# Reliable method Selective-Repeat
-# Uses functions for sending and receiving packets from A_Con
+
+# Reliable method Selective-Repeat, contains functions for both a server and a client.
+# Inherits functions and variables from the A_Con class.
 class SelectiveRepeat(A_Con):
     def __init__(self, laddr, raddr, port, window, test):
         super().__init__(laddr, raddr, port, window, test)
@@ -583,7 +594,7 @@ class SelectiveRepeat(A_Con):
         self.list_remote_headers = []
         self.still_sending = True
 
-    #Send fin flag
+    # Send fin flag, adds the fin flag to a window with other packets
     def send_fin(self):
         self.local_header.set_fin(True)
         # send fin header, with a batch of packets
@@ -613,9 +624,10 @@ class SelectiveRepeat(A_Con):
         return False
 
     # used for threading in selective repeat attempt to send a packet many times,
+    # and wait after sending to see if an ack is returned
     def send_packet(self, pkt):
         # sends a packet, then sleeps and checks if an ack is received, if not we resend the packet
-        for i in range(self.window * 5):
+        for i in range(self.window * 3):
             # sending the packet
             if not self.skip_seq(pkt):
                 print(f"sending: {pkt}")
@@ -640,16 +652,20 @@ class SelectiveRepeat(A_Con):
                 break
         return last_nr_in_sequence
 
-    # Sender's actions in Selective Repeat
+    # sends packets using threading, adds new packets when the first packet in a window is acked, (sliding window)
+    # first adds packets to the window while the window isn't full and there is not a fin flag present.
     def send(self, data):
+        # if one of the threads sending packets has failed, we quit.
         if not self.still_sending:
             print(f"a packet in this window was never received")
             for pkt in self.list_local_headers:
                 print(pkt)
             return False
 
+        # grab the largest acked packet in sequence starting at 1.
         last_nr_in_sequence = self.last_pkt_in_sequence()
 
+        # sets the base of the window the next non acked packet.
         send_base = last_nr_in_sequence + 1
         send_baseN = send_base + self.window
 
@@ -664,16 +680,20 @@ class SelectiveRepeat(A_Con):
         if not self.local_header.get_fin() and send_base <= a_packet.get_seqed() < send_baseN - 1:
             return True
 
+        # uses threading to send a window of packets.
         print(f"adding packets to list of sending packets: base:{send_base} baseN:{send_baseN}")
+        # runs the reorder test once if set.
         if not self.reorder():
             for pkt in self.list_local_headers:
                 if pkt.get_seqed() not in self.list_sending_threads:
+                    # if the packet is not already sending its content in a thread, a thread is started.
                     th.Thread(target=self.send_packet, args=(pkt,), daemon=True).start()
+                    # deamon is set to True so that if the main thread is canceled all the sending threads also quits.
                     self.list_sending_threads.append(pkt.get_seqed())
 
         while True:
-            
             try:
+                # receive an ack from the server.
                 data, addr = self.con.recvfrom(12)
                 header, body = split_packet(data)
 
@@ -706,6 +726,9 @@ class SelectiveRepeat(A_Con):
                 return True
 
     # Receivers actions in Selective Repeat
+    # receives packets from a client, if they are withing the expected window,
+    # they are buffered and added to the list of received packets. if we got the first packet in a window.
+    # all packets in sequence from the first header are added to a file.
     def recv(self, chunk_size):
 
         # base of the window
@@ -841,20 +864,18 @@ class Header:
         integer_4bit = str(integer_4bit)
         if len(integer_4bit) < 4:
             integer_4bit = "000" + integer_4bit
-        # print("inn: " + str(integer_4bit))
         self.syn = int(integer_4bit[-4])
         self.ack = int(integer_4bit[-3])
         self.fin = int(integer_4bit[-2])
 
-    # used to
+    """
+        some rather uninteresting getters/setters function beneath.
+        at the bottom is a HeaderWithBody class, which inherits from the Header class, but can also cary a body.
+        not very pythonic but we've stuck with it for too long at this point.
+    """
     def get_flags(self):
         flags = str(self.syn) + str(self.ack) + str(self.fin) + "0"
         return int(flags)
-
-    """
-    some rather uninteresting getters/setters function beneath.
-    at the bottom is a HeaderWithBody class, which inherits from the Header class, but can also cary a body
-    """
 
     def increment_both(self):
         self.seqed += 1
