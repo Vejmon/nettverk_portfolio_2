@@ -14,6 +14,8 @@ The method for reliable transfer is decided when running a client. There are thr
 
     -r sr <Selective Repeat>    -r sw <Stop and Wait>   -r gbn <Go back n>
     
+A JSON object from the sender to the server informs the server of which one of the reliable methods that is invoked on the client side, and it is therefore no need to set the reliable transfer flag on the server-side. 
+
 A server version of the program is invoked as follows, if the program is run in mininet, 
 the program usually finds the local ipv4 address at that node:
 
