@@ -1,0 +1,464 @@
+
+sending hello:
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 0, "fin": 0, "win": 0}
+RTT is measured to:0.010600566864013672s
+timeout set to: 0.04240226745605469s
+
+got ack from server:
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 1, "fin": 0, "win": 0}
+
+last ack from client:
+{"seqed": 0, "acked": 0, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+
+remote header
+{"seqed": 0, "acked": 0, "syn": 1, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 1, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 1, "acked": 1, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 1, "acked": 0, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 1, "acked": 1, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 2, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 2, "acked": 1, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 2, "acked": 2, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 3, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 3, "acked": 2, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 4, "acked": 3, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 3, "acked": 3, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 4, "acked": 3, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 4, "acked": 3, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 5, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 5, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 4, "acked": 4, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 5, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 5, "acked": 4, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 6, "acked": 5, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 6, "acked": 5, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 5, "acked": 5, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 6, "acked": 5, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 6, "acked": 5, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 7, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 7, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 6, "acked": 6, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 7, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 7, "acked": 6, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 8, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 8, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 7, "acked": 7, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 8, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 8, "acked": 7, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 9, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 9, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 8, "acked": 8, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 9, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 9, "acked": 8, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 10, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 10, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 10, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 9, "acked": 9, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 10, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 10, "acked": 9, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 10, "acked": 10, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 11, "acked": 10, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 11, "acked": 11, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 12, "acked": 11, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 13, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 13, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 12, "acked": 12, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 13, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 13, "acked": 12, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 13, "acked": 13, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 14, "acked": 13, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 14, "acked": 14, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 14, "acked": 13, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 15, "acked": 15, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 15, "acked": 14, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 16, "acked": 16, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 16, "acked": 15, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 17, "acked": 17, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 17, "acked": 16, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 18, "acked": 18, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 18, "acked": 17, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 19, "acked": 19, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 19, "acked": 18, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 20, "acked": 20, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 20, "acked": 19, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 21, "acked": 21, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 21, "acked": 20, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 22, "acked": 22, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 22, "acked": 21, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 23, "acked": 23, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 23, "acked": 22, "syn": 0, "ack": 0, "fin": 0, "win": 0}
+approved
+
+
+remote header
+{"seqed": 23, "acked": 23, "syn": 0, "ack": 1, "fin": 0, "win": 0}
+local header
+{"seqed": 24, "acked": 23, "syn": 0, "ack": 0, "fin": 1, "win": 0}
+check headers Client
+
+
+remote header
+{"seqed": 24, "acked": 24, "syn": 0, "ack": 1, "fin": 1, "win": 0}
+local header
+{"seqed": 24, "acked": 23, "syn": 0, "ack": 0, "fin": 1, "win": 0}
+approved
+
+fin_ack received!
+quitting
+total transfer time: 0.256s
+total file size: 32.746KB
+acheived rate: 128.054KB/s
