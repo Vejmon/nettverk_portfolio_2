@@ -43,7 +43,6 @@ class A_Con:
         self.test = test
         self.first_test = True
         self.timeout = 4
-        self.previous_packet = HeaderWithBody(bytearray(12), None)  # previous packet sent from client
         self.local_header = HeaderWithBody(bytearray(12), None)  # header we are attempting to send now
         self.remote_header = Header(bytearray(12))  # response header from server
         self.con = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # connection we are attempting to transmit over
