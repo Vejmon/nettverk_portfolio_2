@@ -213,9 +213,11 @@ def client():
         sys.exit(1)
 
 
-#
+# function to run a server, will start a new server if the transfer is finished or encountered an issue
 def server():
+    # open a port to receive and send messages over in UDP mode (SOCK_DGRAM) and with ipv4 addressing (AF_INET)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as serv_sock:
+        # attempts to bind to a port.
         serv_sock.bind((args.bind, args.port))
         while True:
             print(f"server at {args.bind}:{args.port} is ready to receive")
@@ -232,9 +234,11 @@ def server():
                 # we send an ack to calm the client
                 if not header.get_syn():
                     print(f"got an old header, sending an ack\n{header}")
+                    # build an ack
                     header.set_acked(header.get_seqed())
                     header.set_ack(True)
                     header.set_fin(header.get_fin())
+                    # send the response
                     serv_sock.sendto(header.build_header(), addr)
                     serv_sock.close()
                     break

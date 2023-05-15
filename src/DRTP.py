@@ -129,12 +129,12 @@ class A_Con:
         # set all flags to 0
         self.local_header.set_flags("0000")
 
-    # a function to let server respond to the first connection from a client.
+    # a function to let server respond to the first connection from a client. and establish a connection
     def answer_hello(self):
 
         self.con.settimeout(self.timeout)
 
-        # check that and syn flag is set in first packet.
+        # check that syn flag is set in first packet.
         if self.remote_header.get_syn():
 
             # copy sequence and nr of acked from remote header
@@ -197,6 +197,7 @@ class A_Con:
             return True
 
     # only stop wait uses this function anymore, but it's used to send a fin flag, and a fin ack from the server.
+    # gracefully closes the connection
     def send_fin(self):
         # build a last packet with fin flag set
         self.local_header.set_fin(True)
@@ -224,12 +225,12 @@ class A_Con:
 
         print("never got a fin_ack, giving up")
 
-    # spams some fin flags back to client
+    # sends an answer to the fin flag.
     def answer_fin(self):
         print("sending fin_ack:\n" + self.local_header.__str__())
         self.con.sendto(self.local_header.build_header(), (self.raddr, self.port))
 
-    # comparing the local and remote header on server
+    # comparing the local and remote header on server, mostly used by stop_wait at this point.
     def server_compare_headers(self):
         print("\nremote header")
         print(self.remote_header.__str__())
@@ -249,7 +250,7 @@ class A_Con:
         print("check headers Server\n")
         return False
 
-    # comparing local and remote headers on client
+    # comparing local and remote headers on client, mostly used by stop_wait at this point.
     def client_compare_headers(self):
         print("\nremote header")
         print(self.remote_header.__str__())
@@ -265,9 +266,8 @@ class A_Con:
         print("check headers Client\n")
         return False
 
-    # test functions:
+    # the following are few test functions.
     #  all tests (except reorder) are run on the second set of packets
-
     # generates a duplicate ack for the second packet
     def duplicate_ack(self, pkt):
         if self.test == "dupack" and pkt.get_seqed() == 2:
